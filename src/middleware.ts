@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 
-// Các path không cần xác thực
-const PUBLIC_PATHS = ["/login", "/register"];
+// Cấu hình toàn bộ các URL không cần đăng nhập cho ứng dụng Monety
+const PUBLIC_PATHS = ["/login", "/register", "/forgot-password"];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Bỏ qua các route API nội bộ và static files
+  // 1. Bỏ qua các route hệ thống, API nội bộ của Next.js và asset tĩnh (.png, .jpg, .svg...)
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api") ||
@@ -15,33 +15,38 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // Nếu đang ở trang login thì không cần kiểm tra
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) {
-    // Nếu đã có access_token và vào trang login → chuyển về trang chủ
-    const accessToken = request.cookies.get("access_token")?.value;
+  const accessToken = request.cookies.get("access_token")?.value;
+  const refreshToken = request.cookies.get("refresh_token")?.value;
+
+  // 2. XỬ LÝ NHÓM CÁC TRANG PUBLIC (Login, Register, Forgot Password)
+  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+
+  if (isPublicPath) {
+    // Nếu ĐÃ ĐĂNG NHẬP (có token) mà cố vào trang login/register -> Đá bay về /dashboard
     if (accessToken) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/dashboard", request.url));
     }
     return NextResponse.next();
   }
 
-  const accessToken = request.cookies.get("access_token")?.value;
-  const refreshToken = request.cookies.get("refresh_token")?.value;
-
-  // Có access_token rồi → cho đi thẳng
+  // 3. XỬ LÝ NHÓM CÁC TRANG PRIVATE (Dashboard, Transactions, Wallets...)
+  
+  // Trường hợp 3.1: Đã có access_token -> Cho phép truy cập bình thường
   if (accessToken) {
     return NextResponse.next();
   }
 
-  // Không có access_token → thử dùng refresh_token để lấy cái mới
+  // Trường hợp 3.2: Mất access_token nhưng VẪN CÒN refresh_token -> Tiến hành cấp lại tự động
   if (refreshToken) {
     try {
-      const DOMAIN = (process.env.API_URL || "http://localhost:8000/api").replace(/\/api$/, "");
+      // Đồng bộ Domain theo cấu trúc cổng API backend Monety của bạn
+      const DOMAIN = (process.env.API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
 
-      const res = await fetch(`${DOMAIN}/user/get_access_token`, {
+      // SỬA: Chạy chuẩn endpoint /api/v1/auth/refresh theo Postman File
+      const res = await fetch(`${DOMAIN}/api/v1/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refresh_token: refreshToken }),
+        body: JSON.stringify({ refreshToken: refreshToken }), // SỬA: Key là 'refreshToken'
       });
 
       if (res.ok) {
@@ -49,8 +54,8 @@ export async function middleware(request: NextRequest) {
         const newAccessToken = json?.data?.access_token || json?.access_token;
 
         if (newAccessToken) {
-          // Set cookie mới và cho vào trang
           const response = NextResponse.next();
+          // Cập nhật lại Access Token mới vào Cookie của Client để dùng cho các request sau
           response.cookies.set("access_token", newAccessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
@@ -61,22 +66,24 @@ export async function middleware(request: NextRequest) {
         }
       }
     } catch (err) {
-      console.error("[Middleware] Refresh token error:", err);
+      console.error("[Middleware Auth Error] Không thể tự động làm mới session:", err);
     }
   }
 
-  // Không có token nào hợp lệ → redirect về login
+  // Trường hợp 3.3: Cả 2 token đều không hợp lệ hoặc hết hạn -> Ép về trang Login
   const loginUrl = new URL("/login", request.url);
-  // Lưu lại trang hiện tại để sau khi login xong redirect về
+  // Đính kèm trang họ định vào hụt để sau khi đăng nhập xong, client chuyển hướng quay lại đúng chỗ đó
   loginUrl.searchParams.set("redirect", pathname);
 
   const response = NextResponse.redirect(loginUrl);
-  // Xoá cookie hỏng (nếu có)
+  
+  // Dọn dẹp sạch sẽ đống cookie rác/hỏng để tránh lặp vô hạn (Loop Redirect)
   response.cookies.delete("access_token");
   response.cookies.delete("refresh_token");
   return response;
 }
 
+// Cấu hình matcher để Middleware chỉ quét các route thực tế, tối ưu hiệu năng ứng dụng
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
