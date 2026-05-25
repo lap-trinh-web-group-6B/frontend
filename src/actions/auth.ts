@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 
 const getDomain = () =>
-  ("http://localhost:4000/api").replace(/\/api$/, "");
+  ("http://localhost:3000/api").replace(/\/api$/, "");
 
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
@@ -272,3 +272,627 @@ export async function resetPassword(forgotPasswordToken: string, password: strin
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
   }
 }
+
+// ====================================================
+// Additional API helpers (Categories, Budgets, Transactions, Statistics, Notifications, Payment, User)
+// ----------------------------------------------------
+// Helper to get Authorization header from cookies (server side)
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token")?.value;
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+// ---------------------------
+// 4. CATEGORIES (CRUD)
+// ---------------------------
+export async function getCategories(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/categories${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy danh sách danh mục thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Categories Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function createCategory(name: string, type: string, iconFile?: File) {
+  try {
+    const form = new FormData();
+    form.append("name", name);
+    form.append("type", type);
+    if (iconFile) form.append("icon", iconFile);
+    const res = await fetch(`${getDomain()}/api/v1/categories`, {
+      method: "POST",
+      headers: { ...(await getAuthHeaders()) }, // NOTE: fetch will set correct multipart boundary automatically
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Tạo danh mục thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Create Category Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getCategory(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/categories/${id}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy danh mục thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Category Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateCategory(id: number, fields: Record<string, any>) {
+  try {
+    const form = new FormData();
+    Object.entries(fields).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) form.append(key, value as any);
+    });
+    const res = await fetch(`${getDomain()}/api/v1/categories/${id}`, {
+      method: "PATCH",
+      headers: { ...(await getAuthHeaders()) },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật danh mục thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update Category Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function deleteCategory(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/categories/${id}`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa danh mục thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete Category Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 5. BUDGETS (CRUD)
+// ---------------------------
+export async function createBudget(payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/budgets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Tạo ngân sách thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Create Budget Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getBudgets(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/budgets${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy danh sách ngân sách thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Budgets Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getBudget(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/budgets/${id}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy ngân sách thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Budget Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateBudget(id: number, payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/budgets/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật ngân sách thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update Budget Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function completeBudget(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/budgets/${id}/complete`, {
+      method: "PATCH",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Hoàn thành ngân sách thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Complete Budget Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 6. TRANSACTIONS (CRUD + Scan Invoice)
+// ---------------------------
+export async function getTransactions(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/transactions${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy danh sách giao dịch thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Transactions Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function createTransaction(payload: Record<string, any>, receiptFile?: File) {
+  try {
+    const form = new FormData();
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) form.append(k, v as any);
+    });
+    if (receiptFile) form.append("receipt_image", receiptFile);
+    const res = await fetch(`${getDomain()}/api/v1/transactions`, {
+      method: "POST",
+      headers: { ...(await getAuthHeaders()) },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Tạo giao dịch thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Create Transaction Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getTransaction(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/transactions/${id}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy giao dịch thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Transaction Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateTransaction(id: number, payload: Record<string, any>, receiptFile?: File) {
+  try {
+    const form = new FormData();
+    Object.entries(payload).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) form.append(k, v as any);
+    });
+    if (receiptFile) form.append("receipt_image", receiptFile);
+    const res = await fetch(`${getDomain()}/api/v1/transactions/${id}`, {
+      method: "PATCH",
+      headers: { ...(await getAuthHeaders()) },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật giao dịch thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update Transaction Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function deleteTransaction(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/transactions/${id}`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa giao dịch thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete Transaction Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function scanInvoice(imageFile: File) {
+  try {
+    const form = new FormData();
+    form.append("image", imageFile);
+    const res = await fetch(`${getDomain()}/api/v1/transactions/scan-invoice`, {
+      method: "POST",
+      headers: { ...(await getAuthHeaders()) },
+      body: form,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Quét hóa đơn thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Scan Invoice Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 7. STATISTICS
+// ---------------------------
+export async function getStatisticsGeneral(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/statistics/general${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thống kê chung thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Statistics General Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getStatisticsByCategory(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/statistics/by-category${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thống kê theo danh mục thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Statistics By Category Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getStatisticsTrend(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/statistics/trend${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thống kê xu hướng thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Statistics Trend Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getStatisticsExpenseToBalanceRatio(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/statistics/expense-to-balance-ratio${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy tỷ lệ chi/đối số bế dư thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Statistics Expense/Balance Ratio Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getStatisticsIncomeVsExpense(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/statistics/income-vs-expense${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thống kê thu/chi thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Statistics Income vs Expense Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 8. NOTIFICATIONS
+// ---------------------------
+export async function getNotifications() {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/notifications`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thông báo thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Notifications Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function deleteAllNotifications() {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/notifications`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa toàn bộ thông báo thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete All Notifications Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getNotification(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thông báo thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Notification Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function deleteNotification(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa thông báo thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete Notification Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function markNotificationRead(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}/read`, {
+      method: "PATCH",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Đánh dấu đã đọc thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Mark Notification Read Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 9. PAYMENT
+// ---------------------------
+export async function checkoutPremium() {
+  try {
+    const res = await fetch(`${getDomain()}/api/payment/checkout`, {
+      method: "POST",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Thanh toán thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Checkout Premium Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 10. USER PROFILE & SETTINGS
+// ---------------------------
+export async function getUserProfile() {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/user/profile`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy thông tin người dùng thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get User Profile Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateAvatar(formData: FormData) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/user/update-avatar`, {
+      method: "PATCH",
+      headers: { ...(await getAuthHeaders()) },
+      body: formData,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật avatar thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update Avatar Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateUserName(fullName: string) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/user/update-name`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify({ fullName }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật họ tên thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update User Name Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateUserStatus(status: string) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/user/update-status`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify({ status }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật trạng thái thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update User Status Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// End of additional API helpers
