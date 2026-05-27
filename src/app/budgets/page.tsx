@@ -18,7 +18,7 @@ export default function BudgetsPage() {
     setError(null);
     const res = await getBudgets();
     if (res.success) {
-      setBudgets(res.data || []);
+      setBudgets(res.data?.items || res.data || []);
     } else {
       setError(res.error || "Không thể tải danh sách ngân sách.");
     }
