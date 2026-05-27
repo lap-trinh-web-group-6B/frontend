@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 
 const getDomain = () =>
-  ("http://localhost:4000/api").replace(/\/api$/, "");
+  ("http://localhost:3001/api").replace(/\/api$/, "");
 
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
