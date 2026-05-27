@@ -22,9 +22,9 @@ export async function middleware(request: NextRequest) {
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
   if (isPublicPath) {
-    // Nếu ĐÃ ĐĂNG NHẬP (có token) mà cố vào trang login/register -> Đá bay về /dashboard
+    // Nếu ĐÃ ĐĂNG NHẬP (có token) mà cố vào trang login/register -> Đẩy bay về /
     if (accessToken) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
@@ -40,9 +40,9 @@ export async function middleware(request: NextRequest) {
   if (refreshToken) {
     try {
       // Đồng bộ Domain theo cấu trúc cổng API backend Monety của bạn
-      const DOMAIN = (process.env.API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
+      const DOMAIN = (process.env.API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
 
-      // SỬA: Chạy chuẩn endpoint /api/v1/auth/refresh theo Postman File
+      // Gọi API refresh token
       const res = await fetch(`${DOMAIN}/api/v1/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,7 +51,8 @@ export async function middleware(request: NextRequest) {
 
       if (res.ok) {
         const json = await res.json();
-        const newAccessToken = json?.data?.access_token || json?.access_token;
+        // Hỗ trợ cả 2 định dạng trả về accessToken hoặc access_token
+        const newAccessToken = json?.data?.accessToken || json?.data?.access_token || json?.accessToken || json?.access_token;
 
         if (newAccessToken) {
           const response = NextResponse.next();
