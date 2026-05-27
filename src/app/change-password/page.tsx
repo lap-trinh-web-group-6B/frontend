@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { changePassword } from "../../actions/auth";
 
 export default function ChangePasswordPage() {
   const router = useRouter();
@@ -23,16 +24,32 @@ export default function ChangePasswordPage() {
     setError(null);
     setSuccess(false);
 
-    // MOCK API CALL
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setOldPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+    try {
+      const payload = {
+        old_password: oldPassword,
+        new_password: newPassword,
+        confirm_password: confirmPassword
+      };
+      const res = await changePassword(payload);
       
-      // router.push("/profile")
-    }, 1500);
+      if (res.success) {
+        setSuccess(true);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+        
+        // Optional: redirect to profile after 1.5s
+        setTimeout(() => {
+          router.push("/profile");
+        }, 1500);
+      } else {
+        setError(res.error || "Không thể đổi mật khẩu.");
+      }
+    } catch (err) {
+      setError("Có lỗi xảy ra khi đổi mật khẩu.");
+    }
+    
+    setLoading(false);
   };
 
   return (
