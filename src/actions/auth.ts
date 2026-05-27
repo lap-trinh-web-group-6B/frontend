@@ -26,14 +26,18 @@ export async function login(email: string, password: string) {
     const json = await res.json();
     const data = json.data;
 
-    if (!data || !data.access_token) {
+    // Hỗ trợ cả 2 định dạng trả về accessToken hoặc access_token
+    const accessToken = data?.accessToken || data?.access_token;
+    const refreshToken = data?.refreshToken || data?.refresh_token;
+
+    if (!accessToken) {
       return { success: false, error: "Phản hồi từ server không hợp lệ" };
     }
 
     const cookieStore = await cookies();
 
     // Lưu Access Token vào HTTPOnly Cookie
-    cookieStore.set("access_token", data.access_token, {
+    cookieStore.set("access_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
@@ -41,8 +45,8 @@ export async function login(email: string, password: string) {
     });
 
     // Lưu Refresh Token vào HTTPOnly Cookie
-    if (data.refresh_token) {
-      cookieStore.set("refresh_token", data.refresh_token, {
+    if (refreshToken) {
+      cookieStore.set("refresh_token", refreshToken, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         path: "/",
@@ -98,7 +102,7 @@ export async function refreshAccessToken(): Promise<string | null> {
     if (!res.ok) return null;
 
     const json = await res.json();
-    const newAccessToken = json?.data?.access_token || json?.access_token;
+    const newAccessToken = json?.data?.accessToken || json?.data?.access_token || json?.accessToken || json?.access_token;
 
     if (!newAccessToken) return null;
 
@@ -279,7 +283,23 @@ export async function resetPassword(forgotPasswordToken: string, password: strin
 // Helper to get Authorization header from cookies (server side)
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const cookieStore = await cookies();
-  const token = cookieStore.get("access_token")?.value;
+  let token = cookieStore.get("access_token")?.value;
+
+  if (token) {
+    try {
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+      // Refresh token if expired or about to expire in less than 10 seconds
+      if (payload && payload.exp && payload.exp * 1000 < Date.now() + 10000) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          token = newToken;
+        }
+      }
+    } catch (e) {
+      // Ignore JWT parsing errors
+    }
+  }
+
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
