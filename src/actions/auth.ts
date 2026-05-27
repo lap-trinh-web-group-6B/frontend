@@ -3,7 +3,7 @@
 import { cookies } from "next/headers";
 
 const getDomain = () =>
-  ("http://localhost:3000/api").replace(/\/api$/, "");
+  ("http://localhost:4000/api").replace(/\/api$/, "");
 
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
@@ -586,7 +586,7 @@ export async function deleteTransaction(id: number) {
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
   }
 }
-
+// chỗ nào
 export async function scanInvoice(imageFile: File) {
   try {
     const form = new FormData();
@@ -891,6 +891,142 @@ export async function updateUserStatus(status: string) {
     return { success: true, data: json, error: null };
   } catch (e) {
     console.error("Update User Status Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function changePassword(payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/user/change-password`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Đổi mật khẩu thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Change Password Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 11. WALLETS (CRUD)
+// ---------------------------
+export async function getWallets(params = {}) {
+  try {
+    const query = new URLSearchParams(params as any).toString();
+    const res = await fetch(`${getDomain()}/api/v1/wallets${query ? `?${query}` : ""}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy danh sách ví thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Wallets Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function createWallet(payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/wallets`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Tạo ví thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Create Wallet Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function getWallet(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/wallets/${id}`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy ví thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Wallet Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function updateWallet(id: number, payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/wallets/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Cập nhật ví thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Update Wallet Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+export async function deleteWallet(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/wallets/${id}`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa ví thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete Wallet Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
+// ---------------------------
+// 12. WEBHOOK
+// ---------------------------
+export async function sepayWebhook(payload: Record<string, any>) {
+  try {
+    const res = await fetch(`${getDomain()}/api/webhook/sepay`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xử lý Webhook thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json, error: null };
+  } catch (e) {
+    console.error("Sepay Webhook Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
   }
 }
