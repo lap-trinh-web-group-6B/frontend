@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { getUserProfile, updateUserName, updateAvatar } from "../../actions/auth";
+import { useRouter } from "next/navigation";
+import { getUserProfile, updateUserName, updateAvatar, logout } from "../../actions/auth";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   // Edit name state
   const [isEditingName, setIsEditingName] = useState(false);
@@ -35,6 +37,11 @@ export default function ProfilePage() {
       setError(res.error || "Không thể tải thông tin người dùng");
     }
     setLoading(false);
+  }
+
+  async function handleLogout() {
+    await logout();
+    router.push("/login");
   }
 
   // Handle name update
@@ -352,8 +359,8 @@ export default function ProfilePage() {
               </svg>
             </Link>
 
-            <Link
-              href="/login"
+            <button
+              onClick={handleLogout}
               className="flex items-center justify-between w-full px-4 py-3 bg-red-50 hover:bg-red-100 border border-red-100 rounded-xl transition-colors group"
             >
               <div className="flex items-center gap-3">
@@ -367,7 +374,7 @@ export default function ProfilePage() {
               <svg className="w-4 h-4 text-red-300 group-hover:text-red-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
-            </Link>
+            </button>
           </div>
         </>
       )}
