@@ -801,7 +801,7 @@ export async function deleteNotification(id: number) {
 
 export async function markNotificationRead(id: number) {
   try {
-    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}`, {
+    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}/read`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
       body: JSON.stringify({ is_read: true, isRead: true, status: "READ" }),

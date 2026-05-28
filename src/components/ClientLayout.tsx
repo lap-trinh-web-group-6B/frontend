@@ -53,7 +53,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         const res = await getNotifications();
         if (res.success) {
           const items = res.data?.items || res.data || [];
-          const unread = items.filter((n: any) => !n.isRead).length;
+          const unread = items.filter((n: any) => !n.isRead && !n.is_read).length;
           setUnreadCount(unread);
         }
       } catch (e) {

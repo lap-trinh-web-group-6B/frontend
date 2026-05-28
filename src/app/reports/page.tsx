@@ -5,7 +5,8 @@ import {
   getStatisticsGeneral, 
   getStatisticsExpenseToBalanceRatio,
   getStatisticsByCategory,
-  getStatisticsTrend
+  getStatisticsTrend,
+  getStatisticsIncomeVsExpense
 } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
@@ -14,6 +15,7 @@ export default function ReportsPage() {
   const [ratioStats, setRatioStats] = useState<any>(null);
   const [categoryStats, setCategoryStats] = useState<any[]>([]);
   const [trendStats, setTrendStats] = useState<any[]>([]);
+  const [incomeVsExpense, setIncomeVsExpense] = useState<any>(null);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,17 +28,19 @@ export default function ReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [genRes, ratioRes, catRes, trendRes] = await Promise.all([
+      const [genRes, ratioRes, catRes, trendRes, incExpRes] = await Promise.all([
         getStatisticsGeneral(),
         getStatisticsExpenseToBalanceRatio(),
         getStatisticsByCategory(),
-        getStatisticsTrend()
+        getStatisticsTrend(),
+        getStatisticsIncomeVsExpense()
       ]);
 
       if (genRes.success) setGeneralStats(genRes.data);
       if (ratioRes.success) setRatioStats(ratioRes.data);
       if (catRes.success) setCategoryStats(catRes.data || []);
       if (trendRes.success) setTrendStats(trendRes.data || []);
+      if (incExpRes.success) setIncomeVsExpense(incExpRes.data);
 
       if (!genRes.success && !ratioRes.success) {
         console.warn("Could not load some statistics");
@@ -191,6 +195,39 @@ export default function ReportsPage() {
               )}
             </div>
           </div>
+
+          {/* 5. Income vs Expense */}
+          {incomeVsExpense && (
+            <div className="mt-6 bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 mb-4">Tương quan Thu / Chi (Income vs Expense)</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                  <p className="text-xs text-slate-500 mb-1">Số lượng Thu</p>
+                  <p className="text-lg font-semibold text-emerald-600">
+                    {incomeVsExpense?.INCOME?.transaction_count || 0}
+                  </p>
+                </div>
+                <div className="p-4 bg-red-50/50 rounded-xl border border-red-100">
+                  <p className="text-xs text-slate-500 mb-1">Số lượng Chi</p>
+                  <p className="text-lg font-semibold text-red-600">
+                    {incomeVsExpense?.EXPENSE?.transaction_count || 0}
+                  </p>
+                </div>
+                <div className="p-4 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                  <p className="text-xs text-slate-500 mb-1">Tổng tiền Thu</p>
+                  <p className="text-lg font-semibold text-emerald-600">
+                    {formatCurrency(incomeVsExpense?.INCOME?.total_amount || 0)}
+                  </p>
+                </div>
+                <div className="p-4 bg-red-50/50 rounded-xl border border-red-100">
+                  <p className="text-xs text-slate-500 mb-1">Tổng tiền Chi</p>
+                  <p className="text-lg font-semibold text-red-600">
+                    {formatCurrency(incomeVsExpense?.EXPENSE?.total_amount || 0)}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

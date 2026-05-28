@@ -31,7 +31,7 @@ export default function NotificationsPage() {
 
   async function handleMarkRead(id: number) {
     await markNotificationRead(id);
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true, is_read: true } : n));
     window.dispatchEvent(new Event('notifications_updated'));
   }
 
@@ -52,7 +52,7 @@ export default function NotificationsPage() {
     }
   }
 
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const unreadCount = notifications.filter(n => !n.isRead && !n.is_read).length;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
@@ -91,12 +91,12 @@ export default function NotificationsPage() {
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm divide-y divide-slate-100">
           {notifications.map((n: any) => (
-            <div key={n.id} className={`p-4 transition-colors flex gap-4 ${!n.isRead ? 'bg-emerald-50/30' : 'hover:bg-slate-50'}`}>
-              <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${!n.isRead ? 'bg-emerald-500' : 'bg-transparent'}`}></div>
+            <div key={n.id} className={`p-4 transition-colors flex gap-4 ${(!n.isRead && !n.is_read) ? 'bg-emerald-50/30' : 'hover:bg-slate-50'}`}>
+              <div className={`w-2 h-2 mt-2 rounded-full shrink-0 ${(!n.isRead && !n.is_read) ? 'bg-emerald-500' : 'bg-transparent'}`}></div>
               <div className="flex-1 min-w-0">
-                <h4 className={`text-sm ${!n.isRead ? 'font-bold text-slate-800' : 'font-medium text-slate-700'}`}>{n.title || "Thông báo mới"}</h4>
+                <h4 className={`text-sm ${(!n.isRead && !n.is_read) ? 'font-bold text-slate-800' : 'font-medium text-slate-700'}`}>{n.title || "Thông báo mới"}</h4>
                 <p className="text-sm text-slate-600 mt-1">{n.message || n.content}</p>
-                <p className="text-xs text-slate-400 mt-2">{new Date(n.createdAt).toLocaleString("vi-VN")}</p>
+                <p className="text-xs text-slate-400 mt-2">{new Date(n.createdAt || n.created_at).toLocaleString("vi-VN")}</p>
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <button
@@ -106,7 +106,7 @@ export default function NotificationsPage() {
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                 </button>
-                {!n.isRead && (
+                {(!n.isRead && !n.is_read) && (
                   <button
                     onClick={() => handleMarkRead(n.id)}
                     className="flex items-center gap-1 text-xs font-medium text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 px-2 py-1.5 rounded cursor-pointer transition-colors border border-transparent hover:border-emerald-200"

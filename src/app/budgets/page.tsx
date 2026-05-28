@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, getTransactions } from "../../actions/auth";
+import { useRouter } from "next/navigation";
+import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, logout } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
 export default function BudgetsPage() {
+  const router = useRouter();
   const [budgets, setBudgets] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,15 +27,7 @@ export default function BudgetsPage() {
   useEffect(() => {
     fetchBudgets();
     fetchCategories();
-    fetchTransactions();
   }, []);
-
-  async function fetchTransactions() {
-    const res = await getTransactions({ limit: 1000 });
-    if (res.success) {
-      setTransactions(res.data?.items || res.data || []);
-    }
-  }
 
   async function fetchCategories() {
     const res = await getCategories({ limit: 100 });
@@ -50,7 +43,14 @@ export default function BudgetsPage() {
     if (res.success) {
       setBudgets(res.data?.items || res.data || []);
     } else {
-      setError(res.error || "Không thể tải danh sách ngân sách.");
+      const errMsg = res.error || "Không thể tải danh sách ngân sách.";
+      setError(errMsg);
+      if (errMsg.toLowerCase().includes("hết hạn")) {
+        setTimeout(async () => {
+          await logout();
+          router.push("/login");
+        }, 1500);
+      }
     }
     setLoading(false);
   }
@@ -192,24 +192,8 @@ export default function BudgetsPage() {
           {budgets.map((budget: any) => {
             const limit = budget.amount_limit || budget.amount || 0;
             
-            // Calculate spent locally if the backend does not return it
-            const budgetTransactions = transactions.filter(t => {
-              const isCategoryMatch = budget.category_id ? t.category_id === budget.category_id : true;
-              const tDate = new Date(t.transaction_date).getTime();
-              const isAfterStart = budget.start_date ? tDate >= new Date(budget.start_date).getTime() : true;
-              // set end date to 23:59:59 to include the whole day
-              const end_date = budget.end_date ? new Date(budget.end_date) : null;
-              if (end_date) {
-                end_date.setHours(23, 59, 59, 999);
-              }
-              const isBeforeEnd = end_date ? tDate <= end_date.getTime() : true;
-              const isExpense = t.type === 'EXPENSE';
-              return isCategoryMatch && isAfterStart && isBeforeEnd && isExpense;
-            });
-            const calculatedSpent = budgetTransactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-            
-            const spent = budget.final_spent_amount || budget.spent || calculatedSpent || 0;
-            const catName = budget.categoryName || categories.find(c => c.id === budget.category_id)?.name || "Tất cả danh mục";
+            const spent = budget.current_spent ?? budget.final_spent_amount ?? 0;
+            const catName = budget.categoryName || budget.category_name || categories.find(c => String(c.id) === String(budget.category_id || budget.categoryId))?.name || budget.categories?.name || "Tất cả danh mục";
             
             return (
             <div key={budget.id} className="p-5 bg-white border border-slate-200 rounded-2xl hover:shadow-lg transition-shadow group relative">
