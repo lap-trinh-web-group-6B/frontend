@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getUserProfile, getStatisticsGeneral, getTransactions } from "../actions/auth";
+import { getUserProfile, getStatisticsGeneral, getTransactions, getCategories } from "../actions/auth";
 
 export default function Dashboard() {
   const [user, setUser] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,10 +17,11 @@ export default function Dashboard() {
       try {
         setLoading(true);
         // Chạy song song các request để tối ưu tốc độ
-        const [profileRes, statsRes, transRes] = await Promise.all([
+        const [profileRes, statsRes, transRes, catRes] = await Promise.all([
           getUserProfile(),
           getStatisticsGeneral(),
-          getTransactions({ limit: 5 })
+          getTransactions({ limit: 5 }),
+          getCategories({ limit: 100 })
         ]);
 
         if (profileRes.success) setUser(profileRes.data);
@@ -27,6 +29,9 @@ export default function Dashboard() {
         if (transRes.success) {
           // Xử lý cả 2 trường hợp data trả về mảng trực tiếp hoặc mảng trong .items
           setRecentTransactions(transRes.data?.items || transRes.data || []);
+        }
+        if (catRes.success) {
+          setCategories(catRes.data?.items || catRes.data || []);
         }
 
       } catch (err) {
@@ -132,7 +137,9 @@ export default function Dashboard() {
         ) : (
           <div className="divide-y divide-slate-50">
             {recentTransactions.map((tx: any) => {
-              const isExpense = tx.type === "EXPENSE";
+              const txType = tx.type || tx.categoryType || tx.category_type || tx.category?.type || categories.find(c => c.id === tx.category_id)?.type;
+              const isExpense = txType === "EXPENSE" || !txType;
+              const catName = tx.categoryName || categories.find(c => c.id === tx.category_id)?.name || "Không có danh mục";
               return (
                 <div key={tx.id} className="p-4 sm:px-6 hover:bg-slate-50 transition-colors flex items-center justify-between">
                   <div className="flex items-center gap-4">
@@ -144,7 +151,7 @@ export default function Dashboard() {
                       )}
                     </div>
                     <div>
-                      <p className="font-semibold text-slate-800 text-sm">{tx.note || tx.categoryName || "Giao dịch"}</p>
+                      <p className="font-semibold text-slate-800 text-sm">{tx.note || catName || "Giao dịch"}</p>
                       <p className="text-xs text-slate-500">{new Date(tx.createdAt || tx.transaction_date || Date.now()).toLocaleDateString("vi-VN")}</p>
                     </div>
                   </div>

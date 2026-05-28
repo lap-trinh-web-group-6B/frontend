@@ -801,9 +801,10 @@ export async function deleteNotification(id: number) {
 
 export async function markNotificationRead(id: number) {
   try {
-    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}/read`, {
+    const res = await fetch(`${getDomain()}/api/v1/notifications/${id}`, {
       method: "PATCH",
-      headers: { ...(await getAuthHeaders()) },
+      headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+      body: JSON.stringify({ is_read: true, isRead: true, status: "READ" }),
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
@@ -1052,3 +1053,20 @@ export async function sepayWebhook(payload: Record<string, any>) {
 }
 
 // End of additional API helpers
+
+export async function deleteBudget(id: number) {
+  try {
+    const res = await fetch(`${getDomain()}/api/v1/budgets/${id}`, {
+      method: "DELETE",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Xóa ngân sách thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Delete Budget Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}

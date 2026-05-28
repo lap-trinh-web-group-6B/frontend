@@ -2,40 +2,31 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { getTransactions, deleteTransaction, getCategories } from "../../actions/auth";
+import { getTransactions, deleteTransaction } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchTransactions();
   }, []);
 
-  async function fetchData() {
+  async function fetchTransactions() {
     setLoading(true);
     setError(null);
     try {
-      const [txRes, catRes] = await Promise.all([
-        getTransactions(),
-        getCategories({ limit: 100 })
-      ]);
-      
-      if (txRes.success) {
-        setTransactions(txRes.data?.items || txRes.data || []);
+      const res = await getTransactions();
+      if (res.success) {
+        setTransactions(res.data?.items || res.data || []);
       } else {
-        setError(txRes.error || "Không thể tải danh sách giao dịch.");
-      }
-
-      if (catRes.success) {
-        setCategories(catRes.data?.items || catRes.data || []);
+        setError(res.error || "Không thể tải danh sách giao dịch.");
       }
     } catch (e: any) {
       if (e?.message === 'NEXT_REDIRECT' || (e?.digest && e.digest.startsWith('NEXT_REDIRECT'))) throw e;
-      setError("Có lỗi xảy ra khi tải dữ liệu.");
+      setError("Có lỗi xảy ra khi tải danh sách giao dịch.");
     }
     setLoading(false);
   }
@@ -106,11 +97,7 @@ export default function TransactionsPage() {
         <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
           <div className="divide-y divide-slate-100">
             {transactions.map((t: any) => {
-              // Because type is now on the category in DB, we check multiple possible payload keys.
-              // If completely undefined, we default to EXPENSE (which is most common).
-              const txType = t.type || t.categoryType || t.category_type || t.category?.type || categories.find(c => c.id === t.category_id)?.type;
-              const isExpense = txType === "EXPENSE" || !txType;
-              const catName = t.categoryName || categories.find(c => c.id === t.category_id)?.name || "Không có danh mục";
+              const isExpense = t.type === "EXPENSE";
               return (
                 <div key={t.id} className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group">
                   <div className="flex items-center gap-4">
@@ -126,8 +113,8 @@ export default function TransactionsPage() {
                       )}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-800 text-sm">{t.note || catName || "Giao dịch"}</h4>
-                      <p className="text-xs text-slate-500 mt-0.5">{new Date(t.transaction_date || t.createdAt).toLocaleDateString("vi-VN")} • {catName}</p>
+                      <h4 className="font-semibold text-slate-800 text-sm">{t.note || t.categoryName || "Giao dịch"}</h4>
+                      <p className="text-xs text-slate-500 mt-0.5">{new Date(t.createdAt).toLocaleDateString("vi-VN")} • {t.categoryName || "Không có danh mục"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

@@ -1,13 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, getTransactions } from "../../actions/auth";
+import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
 export default function BudgetsPage() {
   const [budgets, setBudgets] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
-  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -16,25 +15,15 @@ export default function BudgetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   
+  const [newBudgetName, setNewBudgetName] = useState("");
   const [newBudgetAmount, setNewBudgetAmount] = useState("");
   const [newBudgetCategory, setNewBudgetCategory] = useState("");
-  const [newBudgetStartDate, setNewBudgetStartDate] = useState("");
-  const [newBudgetEndDate, setNewBudgetEndDate] = useState("");
-  
   const [modalError, setModalError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBudgets();
     fetchCategories();
-    fetchTransactions();
   }, []);
-
-  async function fetchTransactions() {
-    const res = await getTransactions({ limit: 1000 });
-    if (res.success) {
-      setTransactions(res.data?.items || res.data || []);
-    }
-  }
 
   async function fetchCategories() {
     const res = await getCategories({ limit: 100 });
@@ -57,36 +46,18 @@ export default function BudgetsPage() {
 
   function openAddModal() {
     setEditingId(null);
+    setNewBudgetName("");
     setNewBudgetAmount("");
     setNewBudgetCategory("");
-    
-    // Default dates (first and last day of current month)
-    const now = new Date();
-    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    // adjust timezone offset to avoid being off by a day in yyyy-mm-dd
-    firstDay.setMinutes(firstDay.getMinutes() - firstDay.getTimezoneOffset());
-    lastDay.setMinutes(lastDay.getMinutes() - lastDay.getTimezoneOffset());
-    
-    setNewBudgetStartDate(firstDay.toISOString().split("T")[0]);
-    setNewBudgetEndDate(lastDay.toISOString().split("T")[0]);
-    
     setModalError(null);
     setIsModalOpen(true);
   }
 
   function openEditModal(budget: any) {
     setEditingId(budget.id);
-    setNewBudgetAmount(budget.amount_limit?.toString() || budget.amount?.toString() || "");
-    setNewBudgetCategory(budget.category_id?.toString() || budget.categoryId?.toString() || "");
-    
-    if (budget.start_date) {
-      setNewBudgetStartDate(new Date(budget.start_date).toISOString().split("T")[0]);
-    }
-    if (budget.end_date) {
-      setNewBudgetEndDate(new Date(budget.end_date).toISOString().split("T")[0]);
-    }
-    
+    setNewBudgetName(budget.name || "");
+    setNewBudgetAmount(budget.amount?.toString() || "");
+    setNewBudgetCategory(budget.categoryId?.toString() || "");
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -107,25 +78,19 @@ export default function BudgetsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!newBudgetAmount || !newBudgetStartDate || !newBudgetEndDate) {
-      setModalError("Vui lòng nhập đủ thông tin ngân sách");
+    if (!newBudgetName.trim()) {
+      setModalError("Vui lòng nhập tên ngân sách");
       return;
     }
     
     setIsSubmitting(true);
     setModalError(null);
     
-    const payload: any = {
-      name: "Ngân sách " + new Date().getTime(), // Fallback for old schema
-      amount: Number(newBudgetAmount) || 0,      // Fallback
-      categoryId: newBudgetCategory ? Number(newBudgetCategory) : null, // Fallback
-      amount_limit: Number(newBudgetAmount) || 0,
-      start_date: new Date(newBudgetStartDate).toISOString(),
-      end_date: new Date(newBudgetEndDate).toISOString(),
+    const payload = {
+      name: newBudgetName,
+      amount: Number(newBudgetAmount) || 0,
+      categoryId: newBudgetCategory ? Number(newBudgetCategory) : null
     };
-    if (newBudgetCategory) {
-      payload.category_id = Number(newBudgetCategory);
-    }
 
     try {
       let res;
@@ -189,29 +154,7 @@ export default function BudgetsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {budgets.map((budget: any) => {
-            const limit = budget.amount_limit || budget.amount || 0;
-            
-            // Calculate spent locally if the backend does not return it
-            const budgetTransactions = transactions.filter(t => {
-              const isCategoryMatch = budget.category_id ? t.category_id === budget.category_id : true;
-              const tDate = new Date(t.transaction_date).getTime();
-              const isAfterStart = budget.start_date ? tDate >= new Date(budget.start_date).getTime() : true;
-              // set end date to 23:59:59 to include the whole day
-              const end_date = budget.end_date ? new Date(budget.end_date) : null;
-              if (end_date) {
-                end_date.setHours(23, 59, 59, 999);
-              }
-              const isBeforeEnd = end_date ? tDate <= end_date.getTime() : true;
-              const isExpense = t.type === 'EXPENSE';
-              return isCategoryMatch && isAfterStart && isBeforeEnd && isExpense;
-            });
-            const calculatedSpent = budgetTransactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-            
-            const spent = budget.final_spent_amount || budget.spent || calculatedSpent || 0;
-            const catName = budget.categoryName || categories.find(c => c.id === budget.category_id)?.name || "Tất cả danh mục";
-            
-            return (
+          {budgets.map((budget: any) => (
             <div key={budget.id} className="p-5 bg-white border border-slate-200 rounded-2xl hover:shadow-lg transition-shadow group relative">
               <div className="absolute top-4 right-4 flex opacity-0 group-hover:opacity-100 transition-opacity gap-1 z-10 bg-white/80 backdrop-blur px-2 py-1 rounded-lg">
                 <button 
@@ -238,42 +181,38 @@ export default function BudgetsPage() {
                     </svg>
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-800 pr-16">{catName}</h4>
-                    <p className="text-xs text-slate-500">
-                      {budget.start_date ? new Date(budget.start_date).toLocaleDateString("vi-VN") : ""} 
-                      {budget.end_date ? ` - ${new Date(budget.end_date).toLocaleDateString("vi-VN")}` : ""}
-                    </p>
+                    <h4 className="font-semibold text-slate-800 pr-16">{budget.name || "Ngân sách"}</h4>
+                    <p className="text-xs text-slate-500">{budget.categoryName || "Tất cả danh mục"}</p>
                   </div>
                 </div>
               </div>
               
               <div className="mb-2">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Ngân sách</p>
-                  <p className="font-bold text-slate-800 text-lg">{formatCurrency(limit)}</p>
+                  <p className="font-bold text-slate-800 text-lg">{formatCurrency(budget.amount)}</p>
               </div>
               
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-500">Đã tiêu</span>
-                  <span className="font-semibold text-slate-800">{formatCurrency(spent)}</span>
+                  <span className="font-semibold text-slate-800">{formatCurrency(budget.spent)}</span>
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                   <div 
                     className={`h-2.5 rounded-full ${
-                      (spent / limit) > 0.9 ? 'bg-red-500' : 
-                      (spent / limit) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
+                      (budget.spent / budget.amount) > 0.9 ? 'bg-red-500' : 
+                      (budget.spent / budget.amount) > 0.7 ? 'bg-amber-500' : 'bg-emerald-500'
                     }`}
-                    style={{ width: `${Math.min(100, (spent / limit) * 100)}%` }}
+                    style={{ width: `${Math.min(100, ((budget.spent || 0) / budget.amount) * 100)}%` }}
                   ></div>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
-                  <span>{(spent / limit * 100).toFixed(1)}%</span>
-                  <span>Còn lại: {formatCurrency(limit - spent)}</span>
+                  <span>{((budget.spent || 0) / budget.amount * 100).toFixed(1)}%</span>
+                  <span>Còn lại: {formatCurrency(budget.amount - (budget.spent || 0))}</span>
                 </div>
               </div>
             </div>
-            );
-          })}
+          ))}
         </div>
       )}
 
@@ -300,6 +239,18 @@ export default function BudgetsPage() {
                 </div>
               )}
               
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Tên ngân sách</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ví dụ: Chi tiêu ăn uống tháng này"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
+                  value={newBudgetName}
+                  onChange={(e) => setNewBudgetName(e.target.value)}
+                />
+              </div>
+
               <div>
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Số tiền giới hạn</label>
                 <div className="relative">
@@ -329,29 +280,6 @@ export default function BudgetsPage() {
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Ngày bắt đầu</label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
-                    value={newBudgetStartDate}
-                    onChange={(e) => setNewBudgetStartDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Ngày kết thúc</label>
-                  <input
-                    type="date"
-                    required
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
-                    value={newBudgetEndDate}
-                    onChange={(e) => setNewBudgetEndDate(e.target.value)}
-                  />
-                </div>
               </div>
 
               <div className="pt-4 flex gap-3">

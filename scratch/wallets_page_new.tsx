@@ -17,7 +17,6 @@ export default function WalletsPage() {
   const [walletName, setWalletName] = useState("");
   const [walletType, setWalletType] = useState("CASH");
   const [walletBalance, setWalletBalance] = useState("");
-  const [walletCurrency, setWalletCurrency] = useState("VND");
   const [modalError, setModalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -46,7 +45,6 @@ export default function WalletsPage() {
     setWalletName("");
     setWalletType("CASH");
     setWalletBalance("");
-    setWalletCurrency("VND");
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -56,7 +54,6 @@ export default function WalletsPage() {
     setWalletName(wallet.name || "");
     setWalletType(wallet.type || "CASH");
     setWalletBalance(wallet.balance?.toString() || "0");
-    setWalletCurrency(wallet.currency || "VND");
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -88,8 +85,7 @@ export default function WalletsPage() {
     const payload = {
       name: walletName,
       type: walletType,
-      balance: Number(walletBalance) || 0,
-      currency: walletCurrency
+      balance: Number(walletBalance) || 0
     };
 
     try {
@@ -113,7 +109,7 @@ export default function WalletsPage() {
     setIsSubmitting(false);
   }
 
-  const totalBalance = wallets.reduce((acc, wallet) => acc + (Number(wallet.balance) || 0), 0);
+  const totalBalance = wallets.reduce((acc, wallet) => acc + (wallet.balance || 0), 0);
 
   return (
     <div className="space-y-6">

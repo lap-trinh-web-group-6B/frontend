@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, use } from "react";
 import { useRouter } from "next/navigation";
 import { 
-  createTransaction, 
+  getTransaction, 
+  updateTransaction,
   getWallets,
   getCategories,
   scanInvoice
-} from "../../../actions/auth";
+} from "../../../../actions/auth";
 
-export default function CreateTransactionPage() {
+export default function EditTransactionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
+  const resolvedParams = use(params);
+  const transactionId = Number(resolvedParams.id);
 
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -20,7 +23,7 @@ export default function CreateTransactionPage() {
   const [amount, setAmount] = useState("");
   const [date, setDate] = useState("");
   const [note, setNote] = useState("");
-  const [type, setType] = useState("EXPENSE"); // Only for UI filtering
+  const [type, setType] = useState("EXPENSE");
   const [walletId, setWalletId] = useState<number | "">("");
   const [categoryId, setCategoryId] = useState<number | "">("");
   
@@ -34,26 +37,37 @@ export default function CreateTransactionPage() {
 
   useEffect(() => {
     fetchData();
-    // Set default date to now
-    const now = new Date();
-    // adjust for local timezone offset
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    setDate(now.toISOString().slice(0, 16));
-  }, []);
+  }, [transactionId]);
 
   async function fetchData() {
     setLoading(true);
     try {
-      const [wRes, cRes] = await Promise.all([
+      const [wRes, cRes, tRes] = await Promise.all([
         getWallets(),
-        getCategories({ limit: 100 })
+        getCategories({ limit: 100 }),
+        getTransaction(transactionId)
       ]);
 
       if (wRes.success) setWallets(wRes.data?.items || wRes.data || []);
       if (cRes.success) setCategories(cRes.data?.items || cRes.data || []);
+      
+      if (tRes.success && tRes.data) {
+        const t = tRes.data;
+        setAmount(t.amount?.toString() || "");
+        if (t.transaction_date) {
+          const d = new Date(t.transaction_date);
+          setDate(d.toISOString().slice(0, 16)); // format for datetime-local
+        }
+        setNote(t.note || "");
+        setType(t.type || "EXPENSE");
+        setWalletId(t.wallet_id || "");
+        setCategoryId(t.category_id || "");
+      } else {
+        setError("Không tìm thấy giao dịch");
+      }
     } catch (e: any) {
       if (e?.message === 'NEXT_REDIRECT' || (e?.digest && e.digest.startsWith('NEXT_REDIRECT'))) throw e;
-      setError("Lỗi kết nối khi tải danh mục.");
+      setError("Lỗi kết nối");
     }
     setLoading(false);
   }
@@ -70,17 +84,17 @@ export default function CreateTransactionPage() {
     try {
       const payload = {
         amount: Number(amount),
-        transaction_date: new Date(date).toISOString(), // mapped to DB column
+        transaction_date: new Date(date).toISOString(),
         note,
-        wallet_id: Number(walletId), // mapped to DB column
-        category_id: Number(categoryId) // mapped to DB column
+        wallet_id: Number(walletId),
+        category_id: Number(categoryId)
       };
       
-      const res = await createTransaction(payload);
+      const res = await updateTransaction(transactionId, payload);
       if (res.success) {
         router.push("/transactions");
       } else {
-        setError(res.error || "Không thể tạo giao dịch");
+        setError(res.error || "Không thể cập nhật giao dịch");
       }
     } catch (err: any) {
       if (err?.message === 'NEXT_REDIRECT' || (err?.digest && err.digest.startsWith('NEXT_REDIRECT'))) throw err;
@@ -117,6 +131,10 @@ export default function CreateTransactionPage() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
+  if (loading) {
+    return <div className="p-12 text-center text-slate-500">Đang tải dữ liệu giao dịch...</div>;
+  }
+
   const filteredCategories = categories.filter(c => c.type === type);
 
   return (
@@ -129,8 +147,8 @@ export default function CreateTransactionPage() {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
         </button>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Thêm giao dịch</h2>
-          <p className="text-sm text-slate-500 mt-1">Ghi lại khoản thu/chi mới</p>
+          <h2 className="text-2xl font-bold text-slate-800">Sửa giao dịch</h2>
+          <p className="text-sm text-slate-500 mt-1">Cập nhật thông tin giao dịch</p>
         </div>
       </div>
 
@@ -249,7 +267,7 @@ export default function CreateTransactionPage() {
               disabled={saving}
               className="w-full py-3.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 rounded-xl shadow-md shadow-emerald-200 transition-all flex items-center justify-center gap-2"
             >
-              {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Lưu giao dịch"}
+              {saving ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Lưu thay đổi"}
             </button>
           </div>
         </form>

@@ -1,11 +1,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { getStatisticsGeneral, getStatisticsExpenseToBalanceRatio } from "../../actions/auth";
+import { 
+  getStatisticsGeneral, 
+  getStatisticsExpenseToBalanceRatio,
+  getStatisticsByCategory,
+  getStatisticsTrend
+} from "../../actions/auth";
+import { formatCurrency } from "../../utils/format";
 
 export default function ReportsPage() {
   const [generalStats, setGeneralStats] = useState<any>(null);
   const [ratioStats, setRatioStats] = useState<any>(null);
+  const [categoryStats, setCategoryStats] = useState<any[]>([]);
+  const [trendStats, setTrendStats] = useState<any[]>([]);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -17,28 +26,42 @@ export default function ReportsPage() {
     setLoading(true);
     setError(null);
     try {
-      const [genRes, ratioRes] = await Promise.all([
+      const [genRes, ratioRes, catRes, trendRes] = await Promise.all([
         getStatisticsGeneral(),
-        getStatisticsExpenseToBalanceRatio()
+        getStatisticsExpenseToBalanceRatio(),
+        getStatisticsByCategory(),
+        getStatisticsTrend()
       ]);
 
       if (genRes.success) setGeneralStats(genRes.data);
       if (ratioRes.success) setRatioStats(ratioRes.data);
-      
+      if (catRes.success) setCategoryStats(catRes.data || []);
+      if (trendRes.success) setTrendStats(trendRes.data || []);
+
       if (!genRes.success && !ratioRes.success) {
-        setError("Không thể tải dữ liệu thống kê.");
+        console.warn("Could not load some statistics");
       }
     } catch (e) {
-      setError("Có lỗi xảy ra khi tải báo cáo.");
+      setError("Có lỗi xảy ra khi tải báo cáo từ máy chủ.");
     }
     setLoading(false);
   }
+
+  // Handle potential camelCase or snake_case from backend
+  const totalIncome = generalStats?.totalIncome ?? generalStats?.total_income ?? 0;
+  const totalExpense = generalStats?.totalExpense ?? generalStats?.total_expense ?? 0;
+  const ratio = ratioStats?.ratio ?? 0;
+
+  // Ensure categoryStats is an array
+  const safeCategoryStats = Array.isArray(categoryStats) ? categoryStats : (categoryStats as any)?.items || [];
+  // Ensure trendStats is an array
+  const safeTrendStats = Array.isArray(trendStats) ? trendStats : (trendStats as any)?.items || [];
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold text-slate-800">Báo cáo tổng quan</h2>
-        <p className="text-sm text-slate-500 mt-1">Phân tích tình hình tài chính của bạn trong tháng này.</p>
+        <p className="text-sm text-slate-500 mt-1">Phân tích tình hình tài chính của bạn qua các API Thống kê.</p>
       </div>
 
       {error && (
@@ -53,13 +76,14 @@ export default function ReportsPage() {
             <div className="h-28 bg-slate-100 rounded-2xl animate-pulse" />
             <div className="h-28 bg-slate-100 rounded-2xl animate-pulse" />
           </div>
+          <div className="h-40 bg-slate-100 rounded-2xl animate-pulse" />
           <div className="h-64 bg-slate-100 rounded-2xl animate-pulse" />
         </div>
       ) : (
         <>
-          {/* General Stats */}
+          {/* 1. General Stats */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl">
+            <div className="bg-emerald-50 border border-emerald-100 p-5 rounded-2xl shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -69,10 +93,10 @@ export default function ReportsPage() {
                 <h3 className="text-sm font-semibold text-emerald-800">Tổng thu</h3>
               </div>
               <p className="text-2xl font-bold text-emerald-600">
-                {generalStats?.totalIncome?.toLocaleString() || 0} đ
+                {formatCurrency(totalIncome)}
               </p>
             </div>
-            <div className="bg-red-50 border border-red-100 p-5 rounded-2xl">
+            <div className="bg-red-50 border border-red-100 p-5 rounded-2xl shadow-sm">
               <div className="flex items-center gap-2 mb-2">
                 <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center text-red-600">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -82,14 +106,14 @@ export default function ReportsPage() {
                 <h3 className="text-sm font-semibold text-red-800">Tổng chi</h3>
               </div>
               <p className="text-2xl font-bold text-red-600">
-                {generalStats?.totalExpense?.toLocaleString() || 0} đ
+                {formatCurrency(totalExpense)}
               </p>
             </div>
           </div>
 
-          {/* Ratio Progress */}
+          {/* 2. Ratio Progress */}
           <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
-            <h3 className="text-sm font-semibold text-slate-800 mb-4">Tỷ lệ Chi tiêu / Tổng số dư</h3>
+            <h3 className="text-sm font-semibold text-slate-800 mb-4">Tỷ lệ Chi tiêu / Tổng tài sản (Expense to Balance Ratio)</h3>
             <div className="relative pt-1">
               <div className="flex mb-2 items-center justify-between">
                 <div>
@@ -99,33 +123,73 @@ export default function ReportsPage() {
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-semibold inline-block text-slate-600">
-                    {ratioStats?.ratio?.toFixed(1) || 0}%
+                    {ratio?.toFixed(1) || 0}%
                   </span>
                 </div>
               </div>
               <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-slate-100">
                 <div 
-                  style={{ width: `${Math.min(100, ratioStats?.ratio || 0)}%` }} 
+                  style={{ width: `${Math.min(100, ratio || 0)}%` }} 
                   className={`shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center ${
-                    (ratioStats?.ratio || 0) > 80 ? 'bg-red-500' : 'bg-emerald-500'
+                    (ratio || 0) > 80 ? 'bg-red-500' : 'bg-emerald-500'
                   }`}
                 ></div>
               </div>
               <p className="text-xs text-slate-500 text-center">
-                Bạn đã tiêu {(ratioStats?.ratio || 0).toFixed(1)}% so với ngân sách khả dụng.
+                Bạn đã tiêu {(ratio || 0).toFixed(1)}% so với ngân sách khả dụng.
               </p>
             </div>
           </div>
 
-          {/* Empty State for Advanced Charts */}
-          <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm text-center">
-             <div className="w-16 h-16 bg-slate-50 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
-               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-               </svg>
-             </div>
-             <h3 className="text-sm font-semibold text-slate-800">Biểu đồ phân tích chi tiết</h3>
-             <p className="text-xs text-slate-500 mt-1">Cần tích hợp thư viện Chart (như Recharts/Chart.js) để xem biểu đồ xu hướng.</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* 3. By Category */}
+            <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 mb-4">Chi tiêu theo danh mục</h3>
+              {safeCategoryStats.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">Chưa có dữ liệu phân tích danh mục.</p>
+              ) : (
+                <div className="space-y-4">
+                  {safeCategoryStats.map((item: any, idx: number) => {
+                    const amount = item.amount ?? item.total_amount ?? 0;
+                    const catName = item.category_name ?? item.name ?? item.categoryName ?? "Khác";
+                    return (
+                      <div key={idx} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-3 h-3 rounded-full bg-slate-300"></div>
+                          <span className="text-sm font-medium text-slate-700">{catName}</span>
+                        </div>
+                        <span className="text-sm font-semibold text-slate-800">{formatCurrency(amount)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* 4. Trend */}
+            <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm">
+              <h3 className="text-sm font-semibold text-slate-800 mb-4">Xu hướng (Trend)</h3>
+              {safeTrendStats.length === 0 ? (
+                <p className="text-xs text-slate-500 text-center py-4">Chưa có dữ liệu xu hướng.</p>
+              ) : (
+                <div className="space-y-4">
+                  {safeTrendStats.map((item: any, idx: number) => {
+                    const dateStr = item.date ?? item.month ?? item.period ?? `Kỳ ${idx+1}`;
+                    const inc = item.income ?? item.total_income ?? 0;
+                    const exp = item.expense ?? item.total_expense ?? 0;
+                    return (
+                      <div key={idx} className="flex items-center justify-between text-sm border-b border-slate-50 pb-2 last:border-0 last:pb-0">
+                        <span className="font-medium text-slate-600">{dateStr}</span>
+                        <div className="text-right">
+                          <div className="text-emerald-600">+{formatCurrency(inc)}</div>
+                          <div className="text-red-600">-{formatCurrency(exp)}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </>
       )}
