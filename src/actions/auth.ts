@@ -341,7 +341,7 @@ export async function createCategory(name: string, type: string, iconFile?: File
       return { success: false, error: err.message || "Tạo danh mục thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Create Category Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -382,7 +382,7 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
       return { success: false, error: err.message || "Cập nhật danh mục thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update Category Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -421,7 +421,7 @@ export async function createBudget(payload: Record<string, any>) {
       return { success: false, error: err.message || "Tạo ngân sách thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Create Budget Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -477,7 +477,7 @@ export async function updateBudget(id: number, payload: Record<string, any>) {
       return { success: false, error: err.message || "Cập nhật ngân sách thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update Budget Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -495,7 +495,7 @@ export async function completeBudget(id: number) {
       return { success: false, error: err.message || "Hoàn thành ngân sách thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Complete Budget Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -541,7 +541,7 @@ export async function createTransaction(payload: Record<string, any>, receiptFil
       return { success: false, error: err.message || "Tạo giao dịch thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Create Transaction Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -583,7 +583,7 @@ export async function updateTransaction(id: number, payload: Record<string, any>
       return { success: false, error: err.message || "Cập nhật giao dịch thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update Transaction Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -621,7 +621,7 @@ export async function scanInvoice(imageFile: File) {
       return { success: false, error: err.message || "Quét hóa đơn thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Scan Invoice Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -871,7 +871,7 @@ export async function updateAvatar(formData: FormData) {
       return { success: false, error: err.message || "Cập nhật avatar thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update Avatar Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -890,7 +890,7 @@ export async function updateUserName(fullName: string) {
       return { success: false, error: err.message || "Cập nhật họ tên thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update User Name Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -909,7 +909,7 @@ export async function updateUserStatus(status: string) {
       return { success: false, error: err.message || "Cập nhật trạng thái thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update User Status Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -928,7 +928,7 @@ export async function changePassword(payload: Record<string, any>) {
       return { success: false, error: err.message || "Đổi mật khẩu thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Change Password Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -969,7 +969,7 @@ export async function createWallet(payload: Record<string, any>) {
       return { success: false, error: err.message || "Tạo ví thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Create Wallet Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -1006,7 +1006,7 @@ export async function updateWallet(id: number, payload: Record<string, any>) {
       return { success: false, error: err.message || "Cập nhật ví thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Update Wallet Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -1045,7 +1045,7 @@ export async function sepayWebhook(payload: Record<string, any>) {
       return { success: false, error: err.message || "Xử lý Webhook thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json, error: null };
+    return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Sepay Webhook Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
