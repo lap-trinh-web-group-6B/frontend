@@ -18,7 +18,7 @@ export default function TransactionsPage() {
     setError(null);
     const res = await getTransactions();
     if (res.success) {
-      setTransactions(res.data || []);
+      setTransactions(res.data?.items || res.data || []);
     } else {
       setError(res.error || "Không thể tải danh sách giao dịch.");
     }
