@@ -45,10 +45,10 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const totalIncome = stats?.totalIncome || 0;
-  const totalExpense = stats?.totalExpense || 0;
+  const totalIncome = stats?.total_income ?? stats?.totalIncome ?? 0;
+  const totalExpense = stats?.total_expense ?? stats?.totalExpense ?? 0;
   // Nếu API không trả về field balance cụ thể thì dùng tổng thu trừ tổng chi
-  const balance = stats?.balance ?? (totalIncome - totalExpense);
+  const balance = stats?.total_balance ?? stats?.balance ?? (totalIncome - totalExpense);
 
   if (loading) {
     return (
