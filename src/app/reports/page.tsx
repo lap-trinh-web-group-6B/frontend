@@ -56,7 +56,8 @@ export default function ReportsPage() {
   const totalExpense = generalStats?.totalExpense ?? generalStats?.total_expense ?? 0;
   const ratioBalance = ratioStats?.total_balance ?? 0;
   const ratioExpense = ratioStats?.total_expense ?? 0;
-  const ratio = ratioStats?.ratio ?? (ratioBalance > 0 ? (ratioExpense / ratioBalance) * 100 : 0);
+  const totalAvailable = ratioBalance + ratioExpense;
+  const ratio = ratioStats?.ratio ?? (totalAvailable > 0 ? (ratioExpense / totalAvailable) * 100 : 0);
 
   // Ensure categoryStats is an array
   const safeCategoryStats = Array.isArray(categoryStats) ? categoryStats : (categoryStats as any)?.items || [];
