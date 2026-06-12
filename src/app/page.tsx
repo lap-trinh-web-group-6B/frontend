@@ -93,7 +93,7 @@ export default function Dashboard() {
         <div className="bg-emerald-600 text-white p-6 rounded-2xl shadow-lg relative overflow-hidden">
           <div className="relative z-10">
             <p className="text-emerald-100 text-sm font-medium mb-1">Số dư hiện tại</p>
-            <h3 className="text-3xl font-bold">{balance.toLocaleString()} đ</h3>
+            <h3 className="text-3xl font-bold">{Number(balance).toLocaleString("vi-VN")} đ</h3>
           </div>
           <svg className="absolute right-0 bottom-0 text-emerald-500 w-32 h-32 transform translate-x-8 translate-y-8 opacity-50" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -107,7 +107,7 @@ export default function Dashboard() {
             </div>
             <p className="text-slate-500 text-sm font-medium">Tổng thu nhập</p>
           </div>
-          <h3 className="text-2xl font-bold text-slate-800">{totalIncome.toLocaleString()} đ</h3>
+          <h3 className="text-2xl font-bold text-slate-800">{Number(totalIncome).toLocaleString("vi-VN")} đ</h3>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
@@ -117,7 +117,7 @@ export default function Dashboard() {
             </div>
             <p className="text-slate-500 text-sm font-medium">Tổng chi tiêu</p>
           </div>
-          <h3 className="text-2xl font-bold text-slate-800">{totalExpense.toLocaleString()} đ</h3>
+          <h3 className="text-2xl font-bold text-slate-800">{Number(totalExpense).toLocaleString("vi-VN")} đ</h3>
         </div>
       </div>
 
@@ -156,7 +156,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div className={`font-bold text-sm ${isExpense ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {isExpense ? "-" : "+"}{tx.amount?.toLocaleString()} đ
+                    {isExpense ? "-" : "+"}{Number(tx.amount || 0).toLocaleString("vi-VN")} đ
                   </div>
                 </div>
               );

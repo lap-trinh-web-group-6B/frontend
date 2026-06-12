@@ -54,7 +54,9 @@ export default function ReportsPage() {
   // Handle potential camelCase or snake_case from backend
   const totalIncome = generalStats?.totalIncome ?? generalStats?.total_income ?? 0;
   const totalExpense = generalStats?.totalExpense ?? generalStats?.total_expense ?? 0;
-  const ratio = ratioStats?.ratio ?? 0;
+  const ratioBalance = ratioStats?.total_balance ?? 0;
+  const ratioExpense = ratioStats?.total_expense ?? 0;
+  const ratio = ratioStats?.ratio ?? (ratioBalance > 0 ? (ratioExpense / ratioBalance) * 100 : 0);
 
   // Ensure categoryStats is an array
   const safeCategoryStats = Array.isArray(categoryStats) ? categoryStats : (categoryStats as any)?.items || [];
