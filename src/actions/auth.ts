@@ -5,6 +5,13 @@ import { cookies } from "next/headers";
 const getDomain = () =>
   ("http://localhost:3001/api").replace(/\/api$/, "");
 
+function formatUserAvatar(user: any) {
+  if (user && user.avatar && user.avatar.startsWith('/uploads')) {
+    user.avatar = `${getDomain()}${user.avatar}`;
+  }
+  return user;
+}
+
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
 // ==========================================
@@ -54,7 +61,7 @@ export async function login(email: string, password: string) {
       });
     }
 
-    return { success: true, user: data.user, error: null };
+    return { success: true, user: formatUserAvatar(data.user), error: null };
   } catch (error) {
     console.error("Login Error:", error);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -880,7 +887,7 @@ export async function getUserProfile() {
       }
     }
 
-    return { success: true, data: json.data, error: null };
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Get User Profile Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -899,7 +906,7 @@ export async function updateAvatar(formData: FormData) {
       return { success: false, error: err.message || "Cập nhật avatar thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json.data, error: null };
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Update Avatar Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -918,7 +925,7 @@ export async function updateUserName(fullName: string) {
       return { success: false, error: err.message || "Cập nhật họ tên thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json.data, error: null };
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Update User Name Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };

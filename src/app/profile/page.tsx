@@ -56,6 +56,7 @@ export default function ProfilePage() {
       setProfile((prev: any) => ({ ...prev, fullName: newName.trim() }));
       setIsEditingName(false);
       setSuccess("Cập nhật họ tên thành công!");
+      window.dispatchEvent(new Event("profile_updated"));
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(res.error || "Cập nhật họ tên thất bại");
@@ -91,6 +92,7 @@ export default function ProfilePage() {
       // Refresh profile to get new avatar URL
       await fetchProfile();
       setSuccess("Cập nhật ảnh đại diện thành công!");
+      window.dispatchEvent(new Event("profile_updated"));
       setTimeout(() => setSuccess(null), 3000);
     } else {
       setError(res.error || "Cập nhật avatar thất bại");

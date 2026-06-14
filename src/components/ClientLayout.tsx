@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { logout, getNotifications } from "../actions/auth";
+import { logout, getNotifications, getUserProfile } from "../actions/auth";
 
 // --- AUTH LAYOUT ---
 function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -46,6 +46,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     async function fetchNotifs() {
@@ -67,11 +68,29 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         // ignore
       }
     }
+
+    async function fetchUser() {
+      try {
+        const res = await getUserProfile();
+        if (res.success) {
+          setUser(res.data);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
     fetchNotifs();
+    fetchUser();
 
     const handleUpdate = () => fetchNotifs();
+    const handleProfileUpdate = () => fetchUser();
     window.addEventListener('notifications_updated', handleUpdate);
-    return () => window.removeEventListener('notifications_updated', handleUpdate);
+    window.addEventListener('profile_updated', handleProfileUpdate);
+    return () => {
+      window.removeEventListener('notifications_updated', handleUpdate);
+      window.removeEventListener('profile_updated', handleProfileUpdate);
+    };
   }, [pathname]);
 
   const menuItems = [
@@ -122,11 +141,16 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="p-4 border-t border-slate-100">
           <Link href="/profile" className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors">
-            <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold">
-              U
+            <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-emerald-100 text-emerald-600 font-bold shrink-0">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                user?.fullName?.charAt(0).toUpperCase() || "U"
+              )}
             </div>
             <div className="flex-1 overflow-hidden">
-              <p className="text-sm font-semibold text-slate-700 truncate">Tài khoản</p>
+              <p className="text-sm font-semibold text-slate-700 truncate">{user?.fullName || "Tài khoản"}</p>
+              <p className="text-xs text-slate-400 truncate">{user?.email || "Cá nhân"}</p>
             </div>
           </Link>
         </div>
@@ -145,6 +169,17 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
             <Link href="/" className="text-lg font-black text-emerald-600 flex items-center gap-2">
               <span className="bg-emerald-600 text-white px-2 rounded shadow-sm">M</span>
               MONETY
+            </Link>
+          </div>
+          <div className="flex items-center gap-4 ml-auto">
+            <Link href="/profile" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-emerald-100 text-emerald-600 font-bold transition-transform hover:scale-105 shrink-0">
+                {user?.avatar ? (
+                  <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  user?.fullName?.charAt(0).toUpperCase() || "U"
+                )}
+              </div>
             </Link>
           </div>
         </header>
@@ -176,6 +211,25 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 ))}
               </nav>
+              <div className="p-4 border-t border-slate-100">
+                <Link 
+                  href="/profile" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
+                >
+                  <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 flex items-center justify-center bg-emerald-100 text-emerald-600 font-bold shrink-0">
+                    {user?.avatar ? (
+                      <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.fullName?.charAt(0).toUpperCase() || "U"
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <p className="text-sm font-semibold text-slate-700 truncate">{user?.fullName || "Tài khoản"}</p>
+                    <p className="text-xs text-slate-400 truncate">{user?.email || "Cá nhân"}</p>
+                  </div>
+                </Link>
+              </div>
             </aside>
           </div>
         )}
