@@ -55,6 +55,13 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           const items = res.data?.items || res.data || [];
           const unread = items.filter((n: any) => !n.isRead && !n.is_read).length;
           setUnreadCount(unread);
+        } else if (
+          res.error === "AccessToken đã hết hạn" ||
+          res.error === "AccessToken không hợp lệ" ||
+          res.error === "Không tìm thấy accessToken"
+        ) {
+          await logout();
+          window.location.href = "/login";
         }
       } catch (e) {
         // ignore

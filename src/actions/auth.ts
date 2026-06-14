@@ -293,6 +293,10 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
         const newToken = await refreshAccessToken();
         if (newToken) {
           token = newToken;
+        } else {
+          cookieStore.delete("access_token");
+          cookieStore.delete("refresh_token");
+          token = undefined;
         }
       }
     } catch (e) {
