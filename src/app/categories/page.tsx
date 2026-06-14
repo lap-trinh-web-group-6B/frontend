@@ -13,6 +13,8 @@ export default function CategoriesPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  
   const [name, setName] = useState("");
   const [type, setType] = useState("EXPENSE"); // EXPENSE or INCOME
   const [modalError, setModalError] = useState<string | null>(null);
@@ -51,6 +53,7 @@ export default function CategoriesPage() {
     setName("");
     setType("EXPENSE");
     setModalError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   }
 
@@ -59,6 +62,7 @@ export default function CategoriesPage() {
     setName(cat.name || "");
     setType(cat.type || "EXPENSE");
     setModalError(null);
+    setFieldErrors({});
     setIsModalOpen(true);
   }
 
@@ -97,12 +101,13 @@ export default function CategoriesPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) {
-      setModalError("Vui lòng nhập tên danh mục");
+      setFieldErrors({ name: "Vui lòng nhập tên danh mục" });
       return;
     }
     
     setIsSubmitting(true);
     setModalError(null);
+    setFieldErrors({});
 
     try {
       let res;
@@ -116,7 +121,11 @@ export default function CategoriesPage() {
         setIsModalOpen(false);
         fetchCategories();
       } else {
-        setModalError(res.error || (editingId ? "Không thể cập nhật" : "Không thể tạo mới"));
+        if (res.errorData && typeof res.errorData === 'object') {
+          setFieldErrors(res.errorData);
+        } else {
+          setModalError(res.error || (editingId ? "Không thể cập nhật" : "Không thể tạo mới"));
+        }
       }
     } catch (err: any) {
       if (err?.message === 'NEXT_REDIRECT' || (err?.digest && err.digest.startsWith('NEXT_REDIRECT'))) throw err;
@@ -223,10 +232,18 @@ export default function CategoriesPage() {
                 <input
                   type="text"
                   placeholder="Ví dụ: Ăn uống, Tiền lương..."
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
+                  className={`w-full px-4 py-3 bg-slate-50 border ${fieldErrors.name ? 'border-red-400 focus:ring-red-100' : 'border-slate-200 focus:border-emerald-500 focus:ring-emerald-100'} rounded-xl focus:bg-white focus:ring-2 outline-none transition-all text-sm`}
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (fieldErrors.name) {
+                      setFieldErrors({ ...fieldErrors, name: '' });
+                    }
+                  }}
                 />
+                {fieldErrors.name && (
+                  <p className="mt-1.5 text-xs text-red-600 font-medium">{fieldErrors.name}</p>
+                )}
               </div>
 
               <div>

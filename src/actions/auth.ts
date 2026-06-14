@@ -376,7 +376,7 @@ export async function createCategory(name: string, type: string, iconFile?: File
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: getApiError(err) || "Tạo danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Tạo danh mục thất bại", errorData: err?.data };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -417,7 +417,7 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: getApiError(err) || "Cập nhật danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Cập nhật danh mục thất bại", errorData: err?.data };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
