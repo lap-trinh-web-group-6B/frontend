@@ -861,6 +861,25 @@ export async function getUserProfile() {
       return { success: false, error: err.message || "Lấy thông tin người dùng thất bại" };
     }
     const json = await res.json();
+
+    // Tự động làm mới access token nếu phát hiện loại tài khoản trong DB (PREMIUM)
+    // khác với loại tài khoản đang lưu trong token (FREE) để tránh token bị stale.
+    if (json.data && json.data.type === "PREMIUM") {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("access_token")?.value;
+      if (token) {
+        try {
+          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+          if (payload && payload.type === "FREE") {
+            console.log("[Auth] Phát hiện token cũ (FREE) trong khi DB đã là PREMIUM. Đang tự động làm mới...");
+            await refreshAccessToken();
+          }
+        } catch (e) {
+          // Bỏ qua lỗi giải mã base64 của token
+        }
+      }
+    }
+
     return { success: true, data: json.data, error: null };
   } catch (e) {
     console.error("Get User Profile Error:", e);
@@ -1079,3 +1098,29 @@ export async function deleteBudget(id: number) {
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
   }
 }
+
+export async function simulatePayment(orderCode: string) {
+  try {
+    const res = await fetch(`${getDomain()}/api/webhook/sepay?apikey=sepay_webhook_secure_key_2026`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transferType: "in",
+        content: `PRE${orderCode}`,
+        transferAmount: 2000,
+        gateway: "VietQR",
+        transactionDate: new Date().toISOString(),
+        accountNumber: "0345388317"
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Giả lập thanh toán thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Simulate Payment Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+

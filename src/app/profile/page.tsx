@@ -105,11 +105,10 @@ export default function ProfilePage() {
     const isPremium = type === "PREMIUM";
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${
-          isPremium
-            ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-md shadow-amber-200"
-            : "bg-slate-100 text-slate-600"
-        }`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold tracking-wide ${isPremium
+          ? "bg-gradient-to-r from-amber-400 to-yellow-500 text-white shadow-md shadow-amber-200"
+          : "bg-slate-100 text-slate-600"
+          }`}
       >
         {isPremium && (
           <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
@@ -135,9 +134,8 @@ export default function ProfilePage() {
     };
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${
-          colors[status] || colors.ACTIVATE
-        }`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border ${colors[status] || colors.ACTIVATE
+          }`}
       >
         {status === "ACTIVATE" && (
           <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />

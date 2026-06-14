@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, logout } from "../../actions/auth";
+import Link from "next/link";
+import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, logout, getUserProfile } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
 export default function BudgetsPage() {
@@ -30,10 +31,25 @@ export default function BudgetsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
+  // Premium State
+  const [profile, setProfile] = useState<any>(null);
+  const [isPromoOpen, setIsPromoOpen] = useState(false);
+  const [promoMessage, setPromoMessage] = useState("");
+
   useEffect(() => {
     fetchBudgets();
     fetchCategories();
+    fetchProfile();
   }, []);
+
+  async function fetchProfile() {
+    try {
+      const res = await getUserProfile();
+      if (res.success) {
+        setProfile(res.data);
+      }
+    } catch (e) {}
+  }
 
   async function fetchCategories() {
     const res = await getCategories({ limit: 100 });
@@ -62,6 +78,12 @@ export default function BudgetsPage() {
   }
 
   function openAddModal() {
+    const activeBudgetsCount = budgets.filter((b) => b.status === "ACTIVE").length;
+    if (profile?.type === "FREE" && activeBudgetsCount >= 3) {
+      setPromoMessage("Tài khoản Miễn phí (FREE) chỉ được tạo tối đa 3 ngân sách hoạt động cùng lúc. Hãy nâng cấp lên PREMIUM để không giới hạn ngân sách và tối ưu hóa quản lý tài chính!");
+      setIsPromoOpen(true);
+      return;
+    }
     setEditingId(null);
     setNewBudgetAmount("");
     setNewBudgetCategory("");
@@ -170,7 +192,19 @@ export default function BudgetsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Quản lý ngân sách</h2>
-          <p className="text-sm text-slate-500 mt-1">Theo dõi và kiểm soát chi tiêu hàng tháng.</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-slate-500">Theo dõi và kiểm soát chi tiêu hàng tháng.</p>
+            {profile?.type === "FREE" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                Gói Free: {budgets.filter((b) => b.status === "ACTIVE").length}/3 hoạt động
+              </span>
+            )}
+            {profile?.type === "PREMIUM" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+                Premium 💎 ({budgets.filter((b) => b.status === "ACTIVE").length} hoạt động)
+              </span>
+            )}
+          </div>
         </div>
         <button onClick={openAddModal} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-xl shadow-md transition-all text-sm flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -453,6 +487,47 @@ export default function BudgetsPage() {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   ) : "Xác nhận xóa"}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Promotion Modal */}
+      {isPromoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+              <h3 className="text-lg font-extrabold flex items-center gap-2">
+                💎 Nâng cấp Premium
+              </h3>
+              <button 
+                onClick={() => setIsPromoOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="text-slate-600 text-sm leading-relaxed text-center font-medium">
+                {promoMessage}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPromoOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Để sau
+                </button>
+                <Link
+                  href="/premium"
+                  className="flex-1 px-4 py-3 text-sm font-bold text-center text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl transition-colors shadow-md shadow-amber-100 flex items-center justify-center"
+                >
+                  Nâng cấp ngay ✨
+                </Link>
               </div>
             </div>
           </div>

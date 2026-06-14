@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { 
   createTransaction, 
   getWallets,
   getCategories,
-  scanInvoice
+  scanInvoice,
+  getUserProfile
 } from "../../../actions/auth";
 
 export default function CreateTransactionPage() {
@@ -32,14 +34,28 @@ export default function CreateTransactionPage() {
   const [scanning, setScanning] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Premium State
+  const [profile, setProfile] = useState<any>(null);
+  const [isPromoOpen, setIsPromoOpen] = useState(false);
+
   useEffect(() => {
     fetchData();
+    fetchProfile();
     // Set default date to now
     const now = new Date();
     // adjust for local timezone offset
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     setDate(now.toISOString().slice(0, 16));
   }, []);
+
+  async function fetchProfile() {
+    try {
+      const res = await getUserProfile();
+      if (res.success) {
+        setProfile(res.data);
+      }
+    } catch (e) {}
+  }
 
   async function fetchData() {
     setLoading(true);
@@ -144,11 +160,24 @@ export default function CreateTransactionPage() {
         <div className="p-4 bg-emerald-50 border-b border-emerald-100 flex items-center justify-between">
           <div className="flex items-center gap-2 text-emerald-800">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            <span className="font-medium text-sm">Quét hóa đơn để tự điền</span>
+            <span className="font-medium text-sm flex items-center gap-1.5">
+              Quét hóa đơn để tự điền
+              {profile?.type === "FREE" && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                  🔒 Premium
+                </span>
+              )}
+            </span>
           </div>
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              if (profile?.type === "FREE") {
+                setIsPromoOpen(true);
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}
             disabled={scanning}
             className="px-4 py-2 bg-white text-emerald-600 font-medium text-sm rounded-lg border border-emerald-200 shadow-sm hover:bg-emerald-50 transition-colors disabled:opacity-50"
           >
@@ -254,6 +283,47 @@ export default function CreateTransactionPage() {
           </div>
         </form>
       </div>
+
+      {/* Premium Promotion Modal */}
+      {isPromoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+              <h3 className="text-lg font-extrabold flex items-center gap-2">
+                💎 Nâng cấp Premium
+              </h3>
+              <button 
+                onClick={() => setIsPromoOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="text-slate-600 text-sm leading-relaxed text-center font-medium">
+                Tính năng tự động nhận diện quét ảnh hóa đơn bằng AI chỉ khả dụng đối với tài khoản PREMIUM. Hãy nâng cấp ngay để trải nghiệm sự tiện lợi này cùng nhiều tính năng vượt trội khác!
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPromoOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Để sau
+                </button>
+                <Link
+                  href="/premium"
+                  className="flex-1 px-4 py-3 text-sm font-bold text-center text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl transition-colors shadow-md shadow-amber-100 flex items-center justify-center"
+                >
+                  Nâng cấp ngay ✨
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

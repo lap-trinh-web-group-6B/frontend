@@ -61,7 +61,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* Header: User Profile Greeting */}
       <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
         <div className="flex items-center gap-4">
@@ -129,7 +129,7 @@ export default function Dashboard() {
             Xem tất cả
           </Link>
         </div>
-        
+
         {recentTransactions.length === 0 ? (
           <div className="p-8 text-center text-slate-500">
             <p>Chưa có giao dịch nào.</p>
