@@ -2,8 +2,11 @@
 
 import { cookies } from "next/headers";
 
-const getDomain = () =>
-  ("http://localhost:3001/api").replace(/\/api$/, "");
+const getDomain = () => {
+  const domain = (process.env.API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
+  console.log("[getDomain] Resolving API URL to:", domain);
+  return domain;
+};
 
 function formatUserAvatar(user: any) {
   if (user && user.avatar && user.avatar.startsWith('/uploads')) {
