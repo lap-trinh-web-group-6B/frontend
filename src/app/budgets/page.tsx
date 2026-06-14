@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, logout } from "../../actions/auth";
+import Link from "next/link";
+import { getBudgets, getCategories, createBudget, updateBudget, deleteBudget, logout, getUserProfile } from "../../actions/auth";
 import { formatCurrency } from "../../utils/format";
 
 export default function BudgetsPage() {
@@ -24,10 +25,31 @@ export default function BudgetsPage() {
   
   const [modalError, setModalError] = useState<string | null>(null);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingBudget, setDeletingBudget] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Premium State
+  const [profile, setProfile] = useState<any>(null);
+  const [isPromoOpen, setIsPromoOpen] = useState(false);
+  const [promoMessage, setPromoMessage] = useState("");
+
   useEffect(() => {
     fetchBudgets();
     fetchCategories();
+    fetchProfile();
   }, []);
+
+  async function fetchProfile() {
+    try {
+      const res = await getUserProfile();
+      if (res.success) {
+        setProfile(res.data);
+      }
+    } catch (e) {}
+  }
 
   async function fetchCategories() {
     const res = await getCategories({ limit: 100 });
@@ -56,6 +78,12 @@ export default function BudgetsPage() {
   }
 
   function openAddModal() {
+    const activeBudgetsCount = budgets.filter((b) => b.status === "ACTIVE").length;
+    if (profile?.type === "FREE" && activeBudgetsCount >= 3) {
+      setPromoMessage("Tài khoản Miễn phí (FREE) chỉ được tạo tối đa 3 ngân sách hoạt động cùng lúc. Hãy nâng cấp lên PREMIUM để không giới hạn ngân sách và tối ưu hóa quản lý tài chính!");
+      setIsPromoOpen(true);
+      return;
+    }
     setEditingId(null);
     setNewBudgetAmount("");
     setNewBudgetCategory("");
@@ -91,17 +119,28 @@ export default function BudgetsPage() {
     setIsModalOpen(true);
   }
 
-  async function handleDeleteBudget(id: number) {
-    if (!confirm("Bạn có chắc chắn muốn xóa ngân sách này?")) return;
+  function openDeleteModal(budget: any) {
+    setDeletingBudget(budget);
+    setDeleteError(null);
+    setIsDeleteModalOpen(true);
+  }
+
+  async function confirmDeleteBudget() {
+    if (!deletingBudget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
     try {
-      const res = await deleteBudget(id);
+      const res = await deleteBudget(deletingBudget.id);
       if (res.success) {
-        setBudgets(budgets.filter((b) => b.id !== id));
+        setBudgets(budgets.filter((b) => b.id !== deletingBudget.id));
+        setIsDeleteModalOpen(false);
       } else {
-        alert(res.error || "Không thể xóa ngân sách.");
+        setDeleteError(res.error || "Không thể xóa ngân sách.");
       }
     } catch (err) {
-      alert("Lỗi kết nối khi xóa ngân sách.");
+      setDeleteError("Lỗi kết nối khi xóa ngân sách.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -153,7 +192,19 @@ export default function BudgetsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Quản lý ngân sách</h2>
-          <p className="text-sm text-slate-500 mt-1">Theo dõi và kiểm soát chi tiêu hàng tháng.</p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-sm text-slate-500">Theo dõi và kiểm soát chi tiêu hàng tháng.</p>
+            {profile?.type === "FREE" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                Gói Free: {budgets.filter((b) => b.status === "ACTIVE").length}/3 hoạt động
+              </span>
+            )}
+            {profile?.type === "PREMIUM" && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+                Premium ({budgets.filter((b) => b.status === "ACTIVE").length} hoạt động)
+              </span>
+            )}
+          </div>
         </div>
         <button onClick={openAddModal} className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-xl shadow-md transition-all text-sm flex items-center gap-2">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,7 +257,7 @@ export default function BudgetsPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
                 <button 
-                  onClick={() => handleDeleteBudget(budget.id)}
+                  onClick={(e) => { e.stopPropagation(); openDeleteModal(budget); }}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Xóa"
                 >
@@ -357,6 +408,128 @@ export default function BudgetsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingBudget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">
+                Xóa ngân sách
+              </h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {deleteError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 animate-in fade-in duration-200">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-800">
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm">
+                  <span className="font-semibold block">Dừng theo dõi hạn mức!</span>
+                  <span className="block mt-0.5 text-xs text-blue-700">
+                    Hệ thống sẽ ngừng theo dõi hạn mức chi tiêu cho danh mục này. Dữ liệu các giao dịch thực tế vẫn được giữ nguyên.
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Danh mục áp dụng:</span>
+                  <span className="font-semibold text-slate-800">
+                    {deletingBudget.categoryName || deletingBudget.category_name || categories.find(c => String(c.id) === String(deletingBudget.category_id || deletingBudget.categoryId))?.name || deletingBudget.categories?.name || "Tất cả danh mục"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Hạn mức giới hạn:</span>
+                  <span className="font-bold text-slate-800">
+                    {formatCurrency(deletingBudget.amount_limit || deletingBudget.amount || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Thời gian hiệu lực:</span>
+                  <span className="font-semibold text-slate-800">
+                    {deletingBudget.start_date ? new Date(deletingBudget.start_date).toLocaleDateString("vi-VN") : ""} 
+                    {deletingBudget.end_date ? ` - ${new Date(deletingBudget.end_date).toLocaleDateString("vi-VN")}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={confirmDeleteBudget}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : "Xác nhận xóa"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Premium Promotion Modal */}
+      {isPromoOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 text-white">
+              <h3 className="text-lg font-extrabold flex items-center gap-2">
+                Nâng cấp Premium
+              </h3>
+              <button 
+                onClick={() => setIsPromoOpen(false)}
+                className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="text-slate-600 text-sm leading-relaxed text-center font-medium">
+                {promoMessage}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsPromoOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Để sau
+                </button>
+                <Link
+                  href="/premium"
+                  className="flex-1 px-4 py-3 text-sm font-bold text-center text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-xl transition-colors shadow-md shadow-amber-100 flex items-center justify-center"
+                >
+                  Nâng cấp ngay ✨
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       )}

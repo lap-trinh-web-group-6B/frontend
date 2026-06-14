@@ -2,8 +2,18 @@
 
 import { cookies } from "next/headers";
 
-const getDomain = () =>
-  ("http://localhost:3001/api").replace(/\/api$/, "");
+const getDomain = () => {
+  const domain = (process.env.API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
+  console.log("[getDomain] Resolving API URL to:", domain);
+  return domain;
+};
+
+function formatUserAvatar(user: any) {
+  if (user && user.avatar && user.avatar.startsWith('/uploads')) {
+    user.avatar = `${getDomain()}${user.avatar}`;
+  }
+  return user;
+}
 
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
@@ -54,7 +64,7 @@ export async function login(email: string, password: string) {
       });
     }
 
-    return { success: true, user: data.user, error: null };
+    return { success: true, user: formatUserAvatar(data.user), error: null };
   } catch (error) {
     console.error("Login Error:", error);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -293,6 +303,10 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
         const newToken = await refreshAccessToken();
         if (newToken) {
           token = newToken;
+        } else {
+          cookieStore.delete("access_token");
+          cookieStore.delete("refresh_token");
+          token = undefined;
         }
       }
     } catch (e) {
@@ -389,9 +403,14 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
   }
 }
 
-export async function deleteCategory(id: number) {
+export async function deleteCategory(id: number, mode: 'delete_all' | 'merge' = 'delete_all', targetCategoryId?: number) {
   try {
-    const res = await fetch(`${getDomain()}/api/v1/categories/${id}`, {
+    const queryParams = new URLSearchParams();
+    queryParams.append('mode', mode);
+    if (targetCategoryId !== undefined && targetCategoryId !== null) {
+      queryParams.append('targetCategoryId', targetCategoryId.toString());
+    }
+    const res = await fetch(`${getDomain()}/api/v1/categories/${id}?${queryParams.toString()}`, {
       method: "DELETE",
       headers: { ...(await getAuthHeaders()) },
     });
@@ -838,6 +857,24 @@ export async function checkoutPremium() {
   }
 }
 
+export async function getPaymentConfig() {
+  try {
+    const res = await fetch(`${getDomain()}/api/payment/config`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy cấu hình thanh toán thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Payment Config Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
 // ---------------------------
 // 10. USER PROFILE & SETTINGS
 // ---------------------------
@@ -852,7 +889,26 @@ export async function getUserProfile() {
       return { success: false, error: err.message || "Lấy thông tin người dùng thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json.data, error: null };
+
+    // Tự động làm mới access token nếu phát hiện loại tài khoản trong DB (PREMIUM)
+    // khác với loại tài khoản đang lưu trong token (FREE) để tránh token bị stale.
+    if (json.data && json.data.type === "PREMIUM") {
+      const cookieStore = await cookies();
+      const token = cookieStore.get("access_token")?.value;
+      if (token) {
+        try {
+          const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+          if (payload && payload.type === "FREE") {
+            console.log("[Auth] Phát hiện token cũ (FREE) trong khi DB đã là PREMIUM. Đang tự động làm mới...");
+            await refreshAccessToken();
+          }
+        } catch (e) {
+          // Bỏ qua lỗi giải mã base64 của token
+        }
+      }
+    }
+
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Get User Profile Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -871,7 +927,7 @@ export async function updateAvatar(formData: FormData) {
       return { success: false, error: err.message || "Cập nhật avatar thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json.data, error: null };
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Update Avatar Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -890,7 +946,7 @@ export async function updateUserName(fullName: string) {
       return { success: false, error: err.message || "Cập nhật họ tên thất bại" };
     }
     const json = await res.json();
-    return { success: true, data: json.data, error: null };
+    return { success: true, data: formatUserAvatar(json.data), error: null };
   } catch (e) {
     console.error("Update User Name Error:", e);
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
@@ -1070,3 +1126,40 @@ export async function deleteBudget(id: number) {
     return { success: false, error: "Lỗi kết nối đến máy chủ" };
   }
 }
+
+export async function simulatePayment(orderCode: string) {
+  try {
+    // Lấy config động để lấy đúng số tiền (transferAmount) cần giả lập
+    let amount = 2000;
+    try {
+      const configRes = await getPaymentConfig();
+      if (configRes.success && configRes.data) {
+        amount = configRes.data.premiumPrice;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch dynamic payment config for simulation, using fallback 2000:", err);
+    }
+
+    const res = await fetch(`${getDomain()}/api/webhook/sepay?apikey=sepay_webhook_secure_key_2026`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        transferType: "in",
+        content: `PRE${orderCode}`,
+        transferAmount: amount,
+        gateway: "VietQR",
+        transactionDate: new Date().toISOString(),
+        accountNumber: "0345388317"
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Giả lập thanh toán thất bại" };
+    }
+    return { success: true, error: null };
+  } catch (e) {
+    console.error("Simulate Payment Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
