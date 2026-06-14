@@ -359,7 +359,7 @@ export default function BudgetsPage() {
                   onChange={(e) => setNewBudgetCategory(e.target.value)}
                 >
                   <option value="">-- Chọn danh mục --</option>
-                  {categories.map((cat: any) => (
+                  {categories.filter((cat: any) => cat.type === 'EXPENSE').map((cat: any) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
