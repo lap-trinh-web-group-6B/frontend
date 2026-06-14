@@ -17,6 +17,14 @@ export default function CategoriesPage() {
   const [type, setType] = useState("EXPENSE"); // EXPENSE or INCOME
   const [modalError, setModalError] = useState<string | null>(null);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingCategory, setDeletingCategory] = useState<any>(null);
+  const [deleteMode, setDeleteMode] = useState<'delete_all' | 'merge'>('delete_all');
+  const [targetCategoryId, setTargetCategoryId] = useState<number | undefined>(undefined);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -54,17 +62,35 @@ export default function CategoriesPage() {
     setIsModalOpen(true);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Bạn có chắc chắn muốn xóa danh mục này?")) return;
+  function openDeleteModal(cat: any) {
+    setDeletingCategory(cat);
+    setDeleteMode('delete_all');
+    setTargetCategoryId(undefined);
+    setDeleteError(null);
+    setIsDeleteModalOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!deletingCategory) return;
+    if (deleteMode === 'merge' && !targetCategoryId) {
+      setDeleteError("Vui lòng chọn danh mục đích để gộp giao dịch.");
+      return;
+    }
+    
+    setIsDeleting(true);
+    setDeleteError(null);
     try {
-      const res = await deleteCategory(id);
+      const res = await deleteCategory(deletingCategory.id, deleteMode, targetCategoryId);
       if (res.success) {
-        setCategories(categories.filter((c) => c.id !== id));
+        setCategories(categories.filter((c) => c.id !== deletingCategory.id));
+        setIsDeleteModalOpen(false);
       } else {
-        alert(res.error || "Không thể xóa danh mục.");
+        setDeleteError(res.error || "Không thể xóa danh mục.");
       }
     } catch (err) {
-      alert("Lỗi khi xóa danh mục.");
+      setDeleteError("Lỗi khi xóa danh mục.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -157,7 +183,7 @@ export default function CategoriesPage() {
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                   </button>
                   <button 
-                    onClick={() => handleDelete(cat.id)}
+                    onClick={(e) => { e.stopPropagation(); openDeleteModal(cat); }}
                     className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -243,6 +269,117 @@ export default function CategoriesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">
+                Xóa danh mục: {deletingCategory.name}
+              </h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {deleteError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 animate-in fade-in duration-200">
+                  {deleteError}
+                </div>
+              )}
+              <p className="text-sm text-slate-500">
+                Bạn đang thực hiện xóa danh mục tự tạo. Vui lòng chọn cách xử lý các giao dịch và ngân sách liên quan:
+              </p>
+
+              <div className="space-y-3">
+                {/* Option 1: Delete All */}
+                <label className="flex items-start gap-3 p-3 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="deleteMode"
+                    value="delete_all"
+                    checked={deleteMode === 'delete_all'}
+                    onChange={() => setDeleteMode('delete_all')}
+                    className="mt-1 accent-emerald-600"
+                  />
+                  <div className="ml-2">
+                    <span className="block text-sm font-semibold text-slate-700">Xóa vĩnh viễn danh mục</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">
+                      Xóa toàn bộ giao dịch thuộc danh mục này và hoàn lại tiền vào ví tương ứng. Xóa ngân sách liên quan.
+                    </span>
+                  </div>
+                </label>
+
+                {/* Option 2: Merge */}
+                <label className="flex items-start gap-3 p-3 border border-slate-200 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors">
+                  <input
+                    type="radio"
+                    name="deleteMode"
+                    value="merge"
+                    checked={deleteMode === 'merge'}
+                    onChange={() => setDeleteMode('merge')}
+                    className="mt-1 accent-emerald-600"
+                  />
+                  <div className="ml-2">
+                    <span className="block text-sm font-semibold text-slate-700">Xóa và Gộp giao dịch</span>
+                    <span className="block text-xs text-slate-500 mt-0.5">
+                      Giữ nguyên các giao dịch nhưng chuyển chúng sang một danh mục khác có cùng loại. Xóa ngân sách liên quan.
+                    </span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Target Category Select Dropdown */}
+              {deleteMode === 'merge' && (
+                <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Chọn danh mục đích để gộp vào
+                  </label>
+                  <select
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:border-emerald-500 transition-all text-sm"
+                    value={targetCategoryId || ""}
+                    onChange={(e) => setTargetCategoryId(Number(e.target.value))}
+                  >
+                    <option value="">-- Chọn danh mục --</option>
+                    {categories
+                      .filter(c => c.id !== deletingCategory.id && c.type === deletingCategory.type)
+                      .map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.user_id === null ? "Hệ thống" : "Tùy chỉnh"})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting || (deleteMode === 'merge' && !targetCategoryId)}
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : "Xác nhận xóa"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

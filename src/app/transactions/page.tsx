@@ -11,6 +11,12 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingTransaction, setDeletingTransaction] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -40,17 +46,28 @@ export default function TransactionsPage() {
     setLoading(false);
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Bạn có chắc chắn muốn xóa giao dịch này?")) return;
+  function openDeleteModal(tx: any) {
+    setDeletingTransaction(tx);
+    setDeleteError(null);
+    setIsDeleteModalOpen(true);
+  }
+
+  async function confirmDeleteTransaction() {
+    if (!deletingTransaction) return;
+    setIsDeleting(true);
+    setDeleteError(null);
     try {
-      const res = await deleteTransaction(id);
+      const res = await deleteTransaction(deletingTransaction.id);
       if (res.success) {
-        setTransactions(transactions.filter((t) => t.id !== id));
+        setTransactions(transactions.filter((t) => t.id !== deletingTransaction.id));
+        setIsDeleteModalOpen(false);
       } else {
-        alert(res.error || "Xóa thất bại");
+        setDeleteError(res.error || "Xóa thất bại");
       }
     } catch (err) {
-      alert("Lỗi kết nối khi xóa giao dịch.");
+      setDeleteError("Lỗi kết nối khi xóa giao dịch.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -147,7 +164,7 @@ export default function TransactionsPage() {
                         </svg>
                       </Link>
                       <button 
-                        onClick={() => handleDelete(t.id)}
+                        onClick={(e) => { e.stopPropagation(); openDeleteModal(t); }}
                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                         title="Xóa"
                       >
@@ -160,6 +177,92 @@ export default function TransactionsPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingTransaction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">
+                Xóa giao dịch
+              </h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {deleteError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 animate-in fade-in duration-200">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3 text-amber-800">
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm">
+                  <span className="font-semibold block">Hoàn trả số dư tự động!</span>
+                  <span className="block mt-0.5 text-xs text-amber-700">
+                    Số dư của ví liên quan sẽ tự động được hoàn trả hoặc khấu trừ tương ứng với số tiền của giao dịch này.
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Giao dịch / Ghi chú:</span>
+                  <span className="font-semibold text-slate-800 truncate max-w-[200px]">
+                    {deletingTransaction.note || categories.find(c => c.id === deletingTransaction.category_id)?.name || "Giao dịch"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Ví thanh toán:</span>
+                  <span className="font-semibold text-slate-800">
+                    {deletingTransaction.wallets?.name || "Ví liên quan"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Ngày thực hiện:</span>
+                  <span className="font-semibold text-slate-800">
+                    {new Date(deletingTransaction.transaction_date || deletingTransaction.createdAt).toLocaleDateString("vi-VN")}
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-slate-200 pt-2 mt-2">
+                  <span className="text-slate-500 font-medium">Số tiền:</span>
+                  <span className={`font-bold ${(deletingTransaction.type || deletingTransaction.categories?.type || categories.find(c => c.id === deletingTransaction.category_id)?.type) === "INCOME" ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {(deletingTransaction.type || deletingTransaction.categories?.type || categories.find(c => c.id === deletingTransaction.category_id)?.type) === "INCOME" ? "+" : "-"}{formatCurrency(deletingTransaction.amount)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={confirmDeleteTransaction}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : "Xác nhận xóa"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

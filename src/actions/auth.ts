@@ -393,9 +393,14 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
   }
 }
 
-export async function deleteCategory(id: number) {
+export async function deleteCategory(id: number, mode: 'delete_all' | 'merge' = 'delete_all', targetCategoryId?: number) {
   try {
-    const res = await fetch(`${getDomain()}/api/v1/categories/${id}`, {
+    const queryParams = new URLSearchParams();
+    queryParams.append('mode', mode);
+    if (targetCategoryId !== undefined && targetCategoryId !== null) {
+      queryParams.append('targetCategoryId', targetCategoryId.toString());
+    }
+    const res = await fetch(`${getDomain()}/api/v1/categories/${id}?${queryParams.toString()}`, {
       method: "DELETE",
       headers: { ...(await getAuthHeaders()) },
     });

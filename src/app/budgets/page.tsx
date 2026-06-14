@@ -24,6 +24,12 @@ export default function BudgetsPage() {
   
   const [modalError, setModalError] = useState<string | null>(null);
 
+  // Delete Modal State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingBudget, setDeletingBudget] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
   useEffect(() => {
     fetchBudgets();
     fetchCategories();
@@ -91,17 +97,28 @@ export default function BudgetsPage() {
     setIsModalOpen(true);
   }
 
-  async function handleDeleteBudget(id: number) {
-    if (!confirm("Bạn có chắc chắn muốn xóa ngân sách này?")) return;
+  function openDeleteModal(budget: any) {
+    setDeletingBudget(budget);
+    setDeleteError(null);
+    setIsDeleteModalOpen(true);
+  }
+
+  async function confirmDeleteBudget() {
+    if (!deletingBudget) return;
+    setIsDeleting(true);
+    setDeleteError(null);
     try {
-      const res = await deleteBudget(id);
+      const res = await deleteBudget(deletingBudget.id);
       if (res.success) {
-        setBudgets(budgets.filter((b) => b.id !== id));
+        setBudgets(budgets.filter((b) => b.id !== deletingBudget.id));
+        setIsDeleteModalOpen(false);
       } else {
-        alert(res.error || "Không thể xóa ngân sách.");
+        setDeleteError(res.error || "Không thể xóa ngân sách.");
       }
     } catch (err) {
-      alert("Lỗi kết nối khi xóa ngân sách.");
+      setDeleteError("Lỗi kết nối khi xóa ngân sách.");
+    } finally {
+      setIsDeleting(false);
     }
   }
 
@@ -206,7 +223,7 @@ export default function BudgetsPage() {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                 </button>
                 <button 
-                  onClick={() => handleDeleteBudget(budget.id)}
+                  onClick={(e) => { e.stopPropagation(); openDeleteModal(budget); }}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Xóa"
                 >
@@ -357,6 +374,87 @@ export default function BudgetsPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && deletingBudget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-slate-800">
+                Xóa ngân sách
+              </h3>
+              <button 
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 hover:bg-slate-100 p-2 rounded-lg transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              {deleteError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100 animate-in fade-in duration-200">
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 text-blue-800">
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="text-sm">
+                  <span className="font-semibold block">Dừng theo dõi hạn mức!</span>
+                  <span className="block mt-0.5 text-xs text-blue-700">
+                    Hệ thống sẽ ngừng theo dõi hạn mức chi tiêu cho danh mục này. Dữ liệu các giao dịch thực tế vẫn được giữ nguyên.
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Danh mục áp dụng:</span>
+                  <span className="font-semibold text-slate-800">
+                    {deletingBudget.categoryName || deletingBudget.category_name || categories.find(c => String(c.id) === String(deletingBudget.category_id || deletingBudget.categoryId))?.name || deletingBudget.categories?.name || "Tất cả danh mục"}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Hạn mức giới hạn:</span>
+                  <span className="font-bold text-slate-800">
+                    {formatCurrency(deletingBudget.amount_limit || deletingBudget.amount || 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Thời gian hiệu lực:</span>
+                  <span className="font-semibold text-slate-800">
+                    {deletingBudget.start_date ? new Date(deletingBudget.start_date).toLocaleDateString("vi-VN") : ""} 
+                    {deletingBudget.end_date ? ` - ${new Date(deletingBudget.end_date).toLocaleDateString("vi-VN")}` : ""}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                >
+                  Hủy bỏ
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={confirmDeleteBudget}
+                  className="flex-1 px-4 py-3 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 rounded-xl transition-colors flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : "Xác nhận xóa"}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
