@@ -201,7 +201,7 @@ export default function BudgetsPage() {
             )}
             {profile?.type === "PREMIUM" && (
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
-                Premium 💎 ({budgets.filter((b) => b.status === "ACTIVE").length} hoạt động)
+                Premium ({budgets.filter((b) => b.status === "ACTIVE").length} hoạt động)
               </span>
             )}
           </div>
@@ -499,7 +499,7 @@ export default function BudgetsPage() {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-amber-500 to-orange-500 text-white">
               <h3 className="text-lg font-extrabold flex items-center gap-2">
-                💎 Nâng cấp Premium
+                Nâng cấp Premium
               </h3>
               <button 
                 onClick={() => setIsPromoOpen(false)}

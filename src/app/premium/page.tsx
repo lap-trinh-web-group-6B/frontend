@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { getUserProfile, checkoutPremium, simulatePayment, refreshAccessToken } from "../../actions/auth";
+import { getUserProfile, checkoutPremium, simulatePayment, refreshAccessToken, getPaymentConfig } from "../../actions/auth";
 
 export default function PremiumPage() {
   const router = useRouter();
@@ -22,9 +22,18 @@ export default function PremiumPage() {
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  // 1. Load User Profile on mount
+  const [paymentConfig, setPaymentConfig] = useState<any>({
+    premiumPrice: 2000,
+    bankBin: "970405",
+    bankAccount: "3910205185595",
+    bankName: "VietinBank",
+    bankOwnerName: "NGUYEN VAN A"
+  });
+
+  // 1. Load User Profile & configurations on mount
   useEffect(() => {
     fetchProfile();
+    fetchConfig();
     // Check if running on localhost for simulator button
     if (typeof window !== "undefined") {
       setIsLocalDev(
@@ -33,6 +42,17 @@ export default function PremiumPage() {
       );
     }
   }, []);
+
+  async function fetchConfig() {
+    try {
+      const res = await getPaymentConfig();
+      if (res.success && res.data) {
+        setPaymentConfig(res.data);
+      }
+    } catch (err) {
+      console.error("Failed to load payment configuration:", err);
+    }
+  }
 
   async function fetchProfile() {
     setLoadingProfile(true);
@@ -240,7 +260,7 @@ export default function PremiumPage() {
           {/* Features Comparison Card */}
           <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm overflow-hidden">
             <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <span className="text-amber-500 text-xl">💎</span> Đặc quyền nâng cấp Premium
+              <span className="text-amber-500 text-xl"></span> Đặc quyền nâng cấp Premium
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -278,7 +298,10 @@ export default function PremiumPage() {
             <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-center justify-between">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">Phí dịch vụ trọn đời</p>
-                <p className="text-2xl font-black text-amber-600 mt-0.5">2.000 VNĐ <span className="text-xs font-medium text-slate-500 line-through">99.000 VNĐ</span></p>
+                <p className="text-2xl font-black text-amber-600 mt-0.5">
+                  {Number(paymentConfig.premiumPrice).toLocaleString("vi-VN")} VNĐ{" "}
+                  <span className="text-xs font-medium text-slate-500 line-through">99.000 VNĐ</span>
+                </p>
               </div>
               
               {!checkoutData && (
@@ -329,16 +352,26 @@ export default function PremiumPage() {
                     {/* Bank Info */}
                     <div className="flex justify-between items-center py-2 border-b border-slate-200">
                       <span className="text-slate-500 text-xs font-semibold uppercase">Ngân hàng</span>
-                      <span className="font-bold text-slate-800 text-right">MBBank (Ngân hàng Quân Đội)</span>
+                      <span className="font-bold text-slate-800 text-right">
+                        {paymentConfig.bankName}
+                      </span>
+                    </div>
+
+                    {/* Account Owner */}
+                    <div className="flex justify-between items-center py-2 border-b border-slate-200">
+                      <span className="text-slate-500 text-xs font-semibold uppercase">Chủ tài khoản</span>
+                      <span className="font-bold text-slate-800 text-right uppercase">
+                        {paymentConfig.bankOwnerName}
+                      </span>
                     </div>
 
                     {/* Account Number */}
                     <div className="flex justify-between items-center py-2 border-b border-slate-200">
                       <span className="text-slate-500 text-xs font-semibold uppercase">Số tài khoản</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-800">0345388317</span>
+                        <span className="font-bold text-slate-800">{paymentConfig.bankAccount}</span>
                         <button
-                          onClick={() => handleCopy("0345388317", "account")}
+                          onClick={() => handleCopy(paymentConfig.bankAccount, "account")}
                           className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 transition-colors"
                           title="Sao chép số tài khoản"
                         >
@@ -355,9 +388,11 @@ export default function PremiumPage() {
                     <div className="flex justify-between items-center py-2 border-b border-slate-200">
                       <span className="text-slate-500 text-xs font-semibold uppercase">Số tiền</span>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-amber-600">2.000 VNĐ</span>
+                        <span className="font-bold text-amber-600">
+                          {Number(paymentConfig.premiumPrice).toLocaleString("vi-VN")} VNĐ
+                        </span>
                         <button
-                          onClick={() => handleCopy("2000", "amount")}
+                          onClick={() => handleCopy(String(paymentConfig.premiumPrice), "amount")}
                           className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 transition-colors"
                           title="Sao chép số tiền"
                         >

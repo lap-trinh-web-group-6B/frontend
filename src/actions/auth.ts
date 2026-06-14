@@ -854,6 +854,24 @@ export async function checkoutPremium() {
   }
 }
 
+export async function getPaymentConfig() {
+  try {
+    const res = await fetch(`${getDomain()}/api/payment/config`, {
+      method: "GET",
+      headers: { ...(await getAuthHeaders()) },
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      return { success: false, error: err.message || "Lấy cấu hình thanh toán thất bại" };
+    }
+    const json = await res.json();
+    return { success: true, data: json.data, error: null };
+  } catch (e) {
+    console.error("Get Payment Config Error:", e);
+    return { success: false, error: "Lỗi kết nối đến máy chủ" };
+  }
+}
+
 // ---------------------------
 // 10. USER PROFILE & SETTINGS
 // ---------------------------
@@ -1108,13 +1126,24 @@ export async function deleteBudget(id: number) {
 
 export async function simulatePayment(orderCode: string) {
   try {
+    // Lấy config động để lấy đúng số tiền (transferAmount) cần giả lập
+    let amount = 2000;
+    try {
+      const configRes = await getPaymentConfig();
+      if (configRes.success && configRes.data) {
+        amount = configRes.data.premiumPrice;
+      }
+    } catch (err) {
+      console.warn("Failed to fetch dynamic payment config for simulation, using fallback 2000:", err);
+    }
+
     const res = await fetch(`${getDomain()}/api/webhook/sepay?apikey=sepay_webhook_secure_key_2026`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         transferType: "in",
         content: `PRE${orderCode}`,
-        transferAmount: 2000,
+        transferAmount: amount,
         gateway: "VietQR",
         transactionDate: new Date().toISOString(),
         accountNumber: "0345388317"
