@@ -146,7 +146,7 @@ export default function BudgetsPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!newBudgetAmount || !newBudgetStartDate || !newBudgetEndDate) {
+    if (!newBudgetAmount || !newBudgetCategory || !newBudgetStartDate || !newBudgetEndDate) {
       setModalError("Vui lòng nhập đủ thông tin ngân sách");
       return;
     }
@@ -340,7 +340,6 @@ export default function BudgetsPage() {
                 <div className="relative">
                   <input
                     type="number"
-                    required
                     placeholder="0"
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm pr-12"
                     value={newBudgetAmount}
@@ -353,13 +352,13 @@ export default function BudgetsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Danh mục áp dụng (Tùy chọn)</label>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Danh mục áp dụng</label>
                 <select
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                   value={newBudgetCategory}
                   onChange={(e) => setNewBudgetCategory(e.target.value)}
                 >
-                  <option value="">-- Tất cả danh mục --</option>
+                  <option value="">-- Chọn danh mục --</option>
                   {categories.map((cat: any) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
@@ -371,7 +370,6 @@ export default function BudgetsPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Ngày bắt đầu</label>
                   <input
                     type="date"
-                    required
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                     value={newBudgetStartDate}
                     onChange={(e) => setNewBudgetStartDate(e.target.value)}
@@ -381,7 +379,6 @@ export default function BudgetsPage() {
                   <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Ngày kết thúc</label>
                   <input
                     type="date"
-                    required
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                     value={newBudgetEndDate}
                     onChange={(e) => setNewBudgetEndDate(e.target.value)}

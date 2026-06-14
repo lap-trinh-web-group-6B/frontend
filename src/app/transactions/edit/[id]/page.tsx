@@ -231,7 +231,6 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
               <div className="relative">
                 <input
                   type="number"
-                  required
                   min="0"
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm font-medium pr-12"
                   value={amount}
@@ -244,7 +243,6 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Thời gian</label>
               <input
                 type="datetime-local"
-                required
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
@@ -256,7 +254,6 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Ví / Tài khoản</label>
               <select
-                required
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                 value={walletId}
                 onChange={(e) => setWalletId(Number(e.target.value))}
@@ -268,7 +265,6 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Danh mục</label>
               <select
-                required
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                 value={categoryId}
                 onChange={(e) => setCategoryId(Number(e.target.value))}

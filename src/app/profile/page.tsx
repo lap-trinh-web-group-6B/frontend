@@ -34,7 +34,14 @@ export default function ProfilePage() {
       setProfile(res.data);
       setNewName(res.data?.fullName || "");
     } else {
-      setError(res.error || "Không thể tải thông tin người dùng");
+      const errMsg = res.error || "Không thể tải thông tin người dùng";
+      setError(errMsg);
+      if (errMsg.toLowerCase().includes("hết hạn")) {
+        setTimeout(async () => {
+          await logout();
+          router.push("/login");
+        }, 1500);
+      }
     }
     setLoading(false);
   }
