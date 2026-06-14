@@ -18,21 +18,47 @@ export async function middleware(request: NextRequest) {
   const accessToken = request.cookies.get("access_token")?.value;
   const refreshToken = request.cookies.get("refresh_token")?.value;
 
+  // Helper function to decode and parse JWT payload safely
+  function parseJwt(token: string) {
+    try {
+      const base64Url = token.split(".")[1];
+      if (!base64Url) return null;
+      const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      // Add necessary base64 padding to prevent atob() from throwing in Edge Runtime
+      const pad = (4 - (base64.length % 4)) % 4;
+      const paddedBase64 = base64 + "=".repeat(pad);
+      const jsonPayload = decodeURIComponent(
+        atob(paddedBase64)
+          .split("")
+          .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+          .join("")
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error("[Middleware] JWT parsing error:", e);
+      return null;
+    }
+  }
+
+  const payload = accessToken ? parseJwt(accessToken) : null;
+  const isAccessTokenExpired = payload && payload.exp ? payload.exp * 1000 < Date.now() : true;
+  const hasValidAccessToken = accessToken && !isAccessTokenExpired;
+
   // 2. XỬ LÝ NHÓM CÁC TRANG PUBLIC (Login, Register, Forgot Password)
   const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
   if (isPublicPath) {
-    // Nếu ĐÃ ĐĂNG NHẬP (có token) mà cố vào trang login/register -> Đá bay về /dashboard
-    if (accessToken) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Nếu ĐÃ ĐĂNG NHẬP (có token hợp lệ) mà cố vào trang login/register -> Đẩy bay về /
+    if (hasValidAccessToken) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
 
   // 3. XỬ LÝ NHÓM CÁC TRANG PRIVATE (Dashboard, Transactions, Wallets...)
   
-  // Trường hợp 3.1: Đã có access_token -> Cho phép truy cập bình thường
-  if (accessToken) {
+  // Trường hợp 3.1: Đã có access_token hợp lệ -> Cho phép truy cập bình thường
+  if (hasValidAccessToken) {
     return NextResponse.next();
   }
 
@@ -40,9 +66,9 @@ export async function middleware(request: NextRequest) {
   if (refreshToken) {
     try {
       // Đồng bộ Domain theo cấu trúc cổng API backend Monety của bạn
-      const DOMAIN = (process.env.API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
+      const DOMAIN = (process.env.API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
 
-      // SỬA: Chạy chuẩn endpoint /api/v1/auth/refresh theo Postman File
+      // Gọi API refresh token
       const res = await fetch(`${DOMAIN}/api/v1/auth/refresh`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -51,7 +77,8 @@ export async function middleware(request: NextRequest) {
 
       if (res.ok) {
         const json = await res.json();
-        const newAccessToken = json?.data?.access_token || json?.access_token;
+        // Hỗ trợ cả 2 định dạng trả về accessToken hoặc access_token
+        const newAccessToken = json?.data?.accessToken || json?.data?.access_token || json?.accessToken || json?.access_token;
 
         if (newAccessToken) {
           const response = NextResponse.next();

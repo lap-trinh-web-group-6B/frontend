@@ -1,0 +1,12 @@
+node_modules
+.next
+out
+build
+.git
+.idea
+.vscode
+.env
+.env*.local
+Dockerfile
+scratch
+

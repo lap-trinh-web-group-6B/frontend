@@ -1,0 +1,2278 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Expense Tracker API",
+    "version": "1.0.0",
+    "description": "Tài liệu API cho ứng dụng Expense Tracker"
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "BearerAuth": []
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/register/send-otp": {
+      "post": {
+        "summary": "Gửi OTP để đăng ký tài khoản (Bước 1)",
+        "description": "Gửi mã OTP xác thực qua email trước khi chính thức tạo User",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gửi thành công"
+          },
+          "400": {
+            "description": "Trùng email hoặc thông tin chưa đủ"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register/verify-otp": {
+      "post": {
+        "summary": "Xác thực OTP và hoàn tất đăng ký (Bước 2)",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password",
+                  "otp"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "otp": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Đăng ký thành công"
+          },
+          "400": {
+            "description": "OTP sai hoặc hết hạn"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/register/resend-otp": {
+      "post": {
+        "summary": "Gửi lại mã OTP đăng ký mới",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gửi lại thành công"
+          },
+          "400": {
+            "description": "Quá lần gửi hoặc email lỗi"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Đăng nhập bằng Email và Password",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "password"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cấp JWT thành công"
+          },
+          "400": {
+            "description": "Sai thông tin đăng nhập"
+          },
+          "403": {
+            "description": "Tài khoản bĩ cấm"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/refresh": {
+  "post": {
+    "summary": "Refresh Access Token",
+    "description": "Cấp mới access token bằng refresh token",
+    "tags": [
+      "Authentication"
+    ],
+    "security": [],
+    "requestBody": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "refreshToken"
+            ],
+            "properties": {
+              "refreshToken": {
+                "type": "string",
+                "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "200": {
+        "description": "Refresh thành công",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "integer",
+                  "example": 200
+                },
+                "message": {
+                  "type": "string",
+                  "example": "Refresh thành công"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "accessToken": {
+                      "type": "string",
+                      "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "401": {
+        "description": "Refresh token không hợp lệ hoặc đã hết hạn"
+      }
+    }
+  }
+},
+    "/api/v1/auth/forgot-password/send-otp": {
+      "post": {
+        "summary": "Gửi OTP để lấy lại mật khẩu",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Gửi thành công"
+          },
+          "400": {
+            "description": "Email chưa đăng ký trên hệ thống"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forgot-password/verify-otp": {
+      "post": {
+        "summary": "Xác thực OTP Quên mật khẩu",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email",
+                  "otp"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "otp": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cấp Token để đặt lại mật khẩu (forgotPasswordToken)"
+          },
+          "400": {
+            "description": "OTP sai hoặc hết hạn"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/forgot-password/resend-otp": {
+      "post": {
+        "summary": "Gửi lại mã OTP mật khẩu mới",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "email"
+                ],
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đã gửi mã mới"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/reset-password": {
+      "post": {
+        "summary": "Đặt mật khẩu mới bằng forgotPasswordToken",
+        "tags": [
+          "Authentication"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "forgotPasswordToken",
+                  "password",
+                  "confirmPassword"
+                ],
+                "properties": {
+                  "forgotPasswordToken": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "confirmPassword": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thành công cập nhật mật khẩu"
+          },
+          "401": {
+            "description": "Token hết hạn/không hợp lệ"
+          }
+        }
+      }
+    },
+    "/api/v1/budgets": {
+      "post": {
+        "summary": "Tạo ngân sách mới",
+        "tags": [
+          "Budgets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {
+                    "type": "integer"
+                  },
+                  "amount_limit": {
+                    "type": "number"
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "is_alert_enabled": {
+                    "type": "boolean"
+                  },
+                  "alert_threshold": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "summary": "Lấy danh sách ngân sách của người dùng",
+        "tags": [
+          "Budgets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Lọc theo ngày bắt đầu (YYYY-MM-DD)"
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            },
+            "description": "Lọc theo ngày kết thúc (YYYY-MM-DD)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/{id}": {
+      "get": {
+        "summary": "Lấy chi tiết một ngân sách",
+        "tags": [
+          "Budgets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Chỉnh sửa ngân sách",
+        "tags": [
+          "Budgets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "category_id": {
+                    "type": "integer"
+                  },
+                  "amount_limit": {
+                    "type": "number"
+                  },
+                  "start_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "end_date": {
+                    "type": "string",
+                    "format": "date-time"
+                  },
+                  "is_alert_enabled": {
+                    "type": "boolean"
+                  },
+                  "alert_threshold": {
+                    "type": "number"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
+    "/api/v1/budgets/{id}/complete": {
+      "patch": {
+        "summary": "Hoàn thành và chốt ngân sách",
+        "tags": [
+          "Budgets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/categories": {
+      "get": {
+        "summary": "Lấy danh sách danh mục (hệ thống và của user)",
+        "description": "Lấy danh sách danh mục theo query param có hỗ trợ phân trang kiếm tìm và sort.",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Số trang"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "description": "Số lượng trên 1 trang"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name_asc",
+                "name_desc"
+              ]
+            },
+            "description": "Sắp xếp theo tên tiếng Việt"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Chuỗi tìm kiếm tên danh mục"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCOME",
+                "EXPENSE"
+              ]
+            },
+            "description": "Lọc theo thể loại"
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "system",
+                "mine"
+              ]
+            },
+            "description": "Nguồn tạo danh mục (Hệ thống hoặc người dùng tạo)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Yêu cầu thành công, list data trả về",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": 200,
+                  "message": "Success",
+                  "data": {
+                    "items": [],
+                    "total": 100,
+                    "page": 1,
+                    "limit": 20,
+                    "totalPages": 5
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Người dùng chưa xác thực JWT"
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo 1 danh mục mới cho user",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Lương tiền bo"
+                  },
+                  "type": {
+                    "type": "string",
+                    "example": "INCOME"
+                  },
+                  "icon": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "Hình ảnh icon của danh mục"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo danh mục mới thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": 10,
+                  "name": "Lương tiền bo",
+                  "type": "INCOME",
+                  "status": "ACTIVATE",
+                  "user_id": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation lỗi hoặc trùng lặp với hệ thống",
+            "content": {
+              "application/json": {
+                "example": {
+                  "name": "Tên danh mục trùng với danh mục hệ thống"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Thiếu token không cho phép hành động"
+          }
+        }
+      }
+    },
+    "/api/v1/categories/{id}": {
+      "get": {
+        "summary": "Lấy chi tiết danh mục theo ID",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID danh mục"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": 200,
+                  "message": "Success",
+                  "data": {
+                    "id": 1,
+                    "name": "Ăn uống",
+                    "type": "EXPENSE",
+                    "icon_url": "/uploads/icons/food.png",
+                    "user_id": null
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Bạn không có quyền xem danh mục này"
+          },
+          "404": {
+            "description": "Không tìm thấy danh mục"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Chỉnh sửa lại danh mục cá nhân đã tạo",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID của danh mục cần cập nhật"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  },
+                  "icon": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File ảnh cập nhật logo danh mục"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVATE",
+                      "DISABLED"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thành công cập nhật"
+          },
+          "400": {
+            "description": "Trùng name hoặc type sai"
+          },
+          "403": {
+            "description": "Không có quyền (ko phải owner hoặc đang cố sửa system params)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Không thể chỉnh sửa danh mục hệ thống"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Id không tồn tại"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Xoá danh mục đã tạo của cá nhân",
+        "tags": [
+          "Categories"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "ID danh mục"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Xóa thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Xóa danh mục thành công"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không có quyền (chẳng hạn xóa của system)",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Không thể xóa danh mục hệ thống"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "ID bị xoá đã ko còn hoặc ko tồn tại ngay từ đầu"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "summary": "Lấy danh sách thông báo của người dùng",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Xóa tất cả thông báo (Xóa mềm)",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}": {
+      "get": {
+        "summary": "Lấy chi tiết thông báo",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Xóa một thông báo (Xóa mềm)",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{id}/read": {
+      "patch": {
+        "summary": "Đánh dấu thông báo đã đọc",
+        "tags": [
+          "Notifications"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success"
+          }
+        }
+      }
+    },
+    "/api/payment/checkout": {
+      "post": {
+        "summary": "Tạo đơn hàng nâng cấp PREMIUM và trả về mã QR",
+        "tags": [
+          "Payment"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Trả về thông tin thanh toán Sepay (VietQR)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "amount": {
+                      "type": "integer",
+                      "example": 99000
+                    },
+                    "transferContent": {
+                      "type": "string",
+                      "example": "PRE12345678"
+                    },
+                    "qrUrl": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/statistics/general": {
+      "get": {
+        "summary": "Tổng quan số dư, tổng thu, tổng chi",
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công"
+          }
+        }
+      }
+    },
+    "/api/v1/statistics/by-category": {
+      "get": {
+        "summary": "Phân tích chi tiêu/thu nhập theo danh mục (dùng cho Pie Chart)",
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCOME",
+                "EXPENSE"
+              ],
+              "default": "EXPENSE"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Danh sách tổng hợp theo danh mục"
+          }
+        }
+      }
+    },
+    "/api/v1/statistics/trend": {
+      "get": {
+        "summary": "Xu hướng thu/chi theo thời gian (dùng cho Line/Bar chart)",
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "period",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "daily",
+                "monthly"
+              ],
+              "default": "daily",
+              "description": "Nhóm theo ngày (daily) hoặc tháng (monthly)"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dữ liệu xu hướng mảng thời gian"
+          }
+        }
+      }
+    },
+    "/api/v1/statistics/expense-to-balance-ratio": {
+      "get": {
+        "summary": "Tỷ lệ tổng tiền chi / tổng số dư ví",
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công"
+          }
+        }
+      }
+    },
+    "/api/v1/statistics/income-vs-expense": {
+      "get": {
+        "summary": "So sánh tương quan giao dịch thu / chi (số tiền và số lượng)",
+        "tags": [
+          "Statistics"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công"
+          }
+        }
+      }
+    },
+    "/api/v1/transactions": {
+      "get": {
+        "summary": "Lấy danh sách giao dịch",
+        "description": "Trả về danh sách giao dịch của người dùng hiện tại, hỗ trợ phân trang, lọc, tìm kiếm, ngày tháng.",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Trang hiện tại"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "description": "Số record trên mỗi trang"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "default": "date_desc"
+            },
+            "description": "Sắp xếp: date_asc, date_desc"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Tìm kiếm theo ghi chú"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "INCOME",
+                "EXPENSE"
+              ]
+            },
+            "description": "Lọc theo loại INCOME/EXPENSE"
+          },
+          {
+            "in": "query",
+            "name": "wallet_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Lọc theo ví cụ thể"
+          },
+          {
+            "in": "query",
+            "name": "category_id",
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Lọc theo danh mục cụ thể"
+          },
+          {
+            "in": "query",
+            "name": "from_date",
+            "schema": {
+              "type": "string"
+            },
+            "description": "ISO date (YYYY-MM-DD), từ ngày..."
+          },
+          {
+            "in": "query",
+            "name": "to_date",
+            "schema": {
+              "type": "string"
+            },
+            "description": "ISO date (YYYY-MM-DD), đến ngày..."
+          },
+          {
+            "in": "query",
+            "name": "source",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "MANUAL",
+                "OCR_SCAN"
+              ]
+            },
+            "description": "Lọc theo nguồn tạo"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công"
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo giao dịch mới",
+        "description": "Tạo một giao dịch thu/chi thủ công",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "wallet_id",
+                  "category_id",
+                  "amount",
+                  "transaction_date"
+                ],
+                "properties": {
+                  "wallet_id": {
+                    "type": "integer"
+                  },
+                  "category_id": {
+                    "type": "integer"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "transaction_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": "string",
+                    "default": "VND"
+                  },
+                  "receipt_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Tạo giao dịch thành công"
+          },
+          "400": {
+            "description": "Lỗi dữ liệu truyền vào"
+          }
+        }
+      }
+    },
+    "/api/v1/transactions/{id}": {
+      "get": {
+        "summary": "Lấy chi tiết 1 giao dịch",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công"
+          },
+          "403": {
+            "description": "Không có quyền truy cập"
+          },
+          "404": {
+            "description": "Không tìm thấy"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Cập nhật thông tin giao dịch",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "wallet_id": {
+                    "type": "integer"
+                  },
+                  "category_id": {
+                    "type": "integer"
+                  },
+                  "amount": {
+                    "type": "number"
+                  },
+                  "transaction_date": {
+                    "type": "string",
+                    "format": "date"
+                  },
+                  "note": {
+                    "type": "string"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVATE",
+                      "DISABLED"
+                    ]
+                  },
+                  "receipt_image": {
+                    "type": "string",
+                    "format": "binary"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cập nhật thành công"
+          },
+          "403": {
+            "description": "Không có quyền thao tác"
+          },
+          "404": {
+            "description": "Không tìm thấy giao dịch"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Xóa giao dịch",
+        "tags": [
+          "Transactions"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Đã xóa an toàn"
+          },
+          "403": {
+            "description": "Không có quyền xóa"
+          },
+          "404": {
+            "description": "Không tìm thấy giao dịch"
+          }
+        }
+      }
+    },
+    "/api/v1/user/profile": {
+      "get": {
+        "summary": "Lấy thông tin cá nhân hiện tại",
+        "description": "Trả về thông tin của người dùng đang đăng nhập dựa trên accessToken",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thông tin cá nhân",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "example": 1
+                    },
+                    "email": {
+                      "type": "string",
+                      "example": "user@example.com"
+                    },
+                    "fullName": {
+                      "type": "string",
+                      "example": "Nguyễn Văn A"
+                    },
+                    "type": {
+                      "type": "string",
+                      "example": "FREE"
+                    },
+                    "status": {
+                      "type": "string",
+                      "example": "ACTIVATE"
+                    },
+                    "avatar": {
+                      "type": "string",
+                      "example": "https://example.com/avatar.jpg"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Lỗi accessToken",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "AccessToken không hợp lệ"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/user/update-avatar": {
+      "patch": {
+        "summary": "Cập nhật ảnh đại diện (Avatar)",
+        "description": "Upload file ảnh đại diện mới. Chấp nhận các định dạng jpeg/png/webp (≤5MB) và tự động nén thành định dạng webp.",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "avatar": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "File ảnh đại diện cần upload"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thông tin người dùng sau khi cập nhật avatar"
+          },
+          "400": {
+            "description": "Lỗi file không hợp lệ hoặc không có nội dung file đính kèm"
+          },
+          "401": {
+            "description": "Lỗi accessToken"
+          }
+        }
+      }
+    },
+    "/api/v1/user/update-name": {
+      "patch": {
+        "summary": "Cập nhật họ tên",
+        "description": "Cập nhật tên đầy đủ của người dùng",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "fullName"
+                ],
+                "properties": {
+                  "fullName": {
+                    "type": "string",
+                    "example": "Nguyễn Văn B"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Thông tin người dùng sau khi cập nhật"
+          },
+          "400": {
+            "description": "Tên người dùng không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "fullName": {
+                      "type": "string",
+                      "example": "Tên không hợp lệ"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Lỗi accessToken"
+          }
+        }
+      }
+    },
+    "/api/v1/user/update-status": {
+      "patch": {
+        "summary": "Cập nhật trạng thái hoạt động",
+        "description": "Cập nhật trạng thái (VD ACTIVATE, DISABLE, CANCEL)",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "status"
+                ],
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVATE",
+                      "DISABLE",
+                      "CANCEL"
+                    ],
+                    "example": "DISABLE"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Cập nhật trạng thái thành công"
+          },
+          "400": {
+            "description": "Trạng thái truyền lên không hợp lệ",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "Trạng thái không hợp lệ"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Lỗi accessToken"
+          }
+        }
+      }
+    },
+    "/api/v1/user/change-password": {
+      "patch": {
+        "summary": "Thay đổi mật khẩu",
+        "description": "Sửa mật khẩu dựa trên mật khẩu cũ và mật khẩu mới",
+        "tags": [
+          "User"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "currentPassword",
+                  "newPassword",
+                  "confirmPassword"
+                ],
+                "properties": {
+                  "currentPassword": {
+                    "type": "string",
+                    "example": "OldPass123"
+                  },
+                  "newPassword": {
+                    "type": "string",
+                    "example": "NewPass123"
+                  },
+                  "confirmPassword": {
+                    "type": "string",
+                    "example": "NewPass123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đổi mật khẩu thành công"
+          },
+          "400": {
+            "description": "Lỗi nhập liệu (sai mật khẩu cũ, mật khẩu mới không khớp)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "currentPassword": {
+                      "type": "string",
+                      "example": "Mật khẩu hiện tại không đúng"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Lỗi accessToken"
+          }
+        }
+      }
+    },
+    "/api/v1/wallets": {
+      "get": {
+        "summary": "Lấy danh sách ví hiện tại",
+        "description": "Lọc dữ liệu ví theo params tìm kiếm và phân trang",
+        "tags": [
+          "Wallets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer",
+              "default": 1
+            },
+            "description": "Số thứ tự trang"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer",
+              "default": 20
+            },
+            "description": "Số lượng kết quả"
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "name_asc",
+                "name_desc"
+              ]
+            },
+            "description": "Sắp xếp theo tên"
+          },
+          {
+            "in": "query",
+            "name": "search",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Tìm kiếm tên ví"
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "CASH",
+                "BANK_ACCOUNT",
+                "E_WALLET"
+              ]
+            },
+            "description": "Loại hệ thống ví (Tiền mặt, ngân hàng..)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": 200,
+                  "message": "Success",
+                  "data": {
+                    "items": [],
+                    "total": 50,
+                    "page": 1,
+                    "limit": 20,
+                    "totalPages": 3
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Không có quyền truy cập"
+          }
+        }
+      },
+      "post": {
+        "summary": "Tạo 1 ví tính toán mới",
+        "tags": [
+          "Wallets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "type"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "example": "Ví Chi Tiêu Vietcombank"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "BANK_ACCOUNT",
+                      "E_WALLET"
+                    ],
+                    "example": "BANK_ACCOUNT"
+                  },
+                  "balance": {
+                    "type": "number",
+                    "example": 5000000
+                  },
+                  "currency": {
+                    "type": "string",
+                    "example": "VND"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Bản ghi ví được tạo mới xong",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": 1,
+                  "name": "Ví Chi Tiêu Vietcombank",
+                  "balance": 5000000,
+                  "currency": "VND",
+                  "status": "ACTIVATE"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Vướng lỗi định dạng hoặc trùng lặp name",
+            "content": {
+              "application/json": {
+                "example": {
+                  "name": "Tên ví đã tồn tại"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/wallets/{id}": {
+      "get": {
+        "summary": "Lấy chi tiết ví theo ID",
+        "tags": [
+          "Wallets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Thành công",
+            "content": {
+              "application/json": {
+                "example": {
+                  "status": 200,
+                  "message": "Success",
+                  "data": {
+                    "id": 1,
+                    "name": "Ví Chi Tiêu",
+                    "balance": 5000000,
+                    "currency": "VND",
+                    "type": "CASH",
+                    "status": "ACTIVATE"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Không có quyền truy cập"
+          },
+          "404": {
+            "description": "Không tìm thấy ví"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Sửa thông tin ví",
+        "tags": [
+          "Wallets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "CASH",
+                      "BANK_ACCOUNT",
+                      "E_WALLET"
+                    ]
+                  },
+                  "balance": {
+                    "type": "number"
+                  },
+                  "currency": {
+                    "type": "string"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": [
+                      "ACTIVATE",
+                      "DISABLED"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Đổi số liệu ví thành công"
+          },
+          "400": {
+            "description": "Tên ví thay đổi đè trùng lặp mới"
+          },
+          "403": {
+            "description": "Bạn không cấu hình được ví của người khác"
+          },
+          "404": {
+            "description": "ID sai"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Khử xoá bỏ ví tiền vĩnh viễn",
+        "tags": [
+          "Wallets"
+        ],
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Xóa dữ liệu sạch",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Xóa ví thành công"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Lỗi khác chủ nhân"
+          },
+          "404": {
+            "description": "Không tìm ra ID ví phù hợp"
+          }
+        }
+      }
+    },
+    "/api/webhook/sepay": {
+      "post": {
+        "summary": "Webhook xử lý các giao dịch từ Sepay",
+        "tags": [
+          "Webhook"
+        ],
+        "responses": {
+          "200": {
+            "description": "Xác nhận nhận Webhook thành công"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Authentication",
+      "description": "Xử lý các nghiệp vụ đăng ký, đăng nhập và quên mật khẩu"
+    },
+    {
+      "name": "Budgets",
+      "description": "Quản lý ngân sách chi tiêu"
+    },
+    {
+      "name": "Categories",
+      "description": "API Quản lý danh mục thu chi"
+    },
+    {
+      "name": "Statistics",
+      "description": "Thống kê và báo cáo tài chính"
+    },
+    {
+      "name": "Transactions",
+      "description": "Quản lý giao dịch"
+    },
+    {
+      "name": "User",
+      "description": "Quản lý thông tin tài khoản người dùng"
+    },
+    {
+      "name": "Wallets",
+      "description": "API Quản lý Ví Tiền Của Người Dùng"
+    }
+  ]
+}
