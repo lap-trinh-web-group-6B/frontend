@@ -293,7 +293,6 @@ export default function WalletsPage() {
                 <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Tên ví</label>
                 <input
                   type="text"
-                  required
                   placeholder="Ví dụ: Tiền mặt, Thẻ tín dụng..."
                   className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
                   value={walletName}

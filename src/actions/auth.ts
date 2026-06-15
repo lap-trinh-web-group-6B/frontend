@@ -2,6 +2,30 @@
 
 import { cookies } from "next/headers";
 
+function getApiError(err: any): string | null {
+  if (!err) return null;
+
+  if (err.data && typeof err.data === 'object') {
+    if (err.data.error) {
+      const detail = err.data.error;
+      return Array.isArray(detail) ? detail[0] : String(detail);
+    }
+    // Lấy thông báo lỗi đầu tiên từ các field validation (ví dụ: data.currentPassword)
+    const values = Object.values(err.data);
+    for (const val of values) {
+      if (typeof val === 'string') return val;
+      if (Array.isArray(val) && val.length > 0 && typeof val[0] === 'string') return val[0];
+    }
+  }
+
+  if (err.message) {
+    return Array.isArray(err.message) ? err.message[0] : String(err.message);
+  }
+
+  return null;
+}
+
+
 const getDomain = () => {
   const domain = (process.env.API_URL || "http://localhost:3001/api").replace(/\/api$/, "");
   console.log("[getDomain] Resolving API URL to:", domain);
@@ -13,32 +37,6 @@ function formatUserAvatar(user: any) {
     user.avatar = `${getDomain()}${user.avatar}`;
   }
   return user;
-}
-
-function extractErrorMessage(err: any, fallback: string): string {
-  if (!err) return fallback;
-  if (err.message && err.message !== "Lỗi" && err.message !== "error" && typeof err.message === "string") {
-    return err.message;
-  }
-  if (typeof err.data === "string" && err.data) {
-    return err.data;
-  }
-  if (err.data && typeof err.data === "object") {
-    const values = Object.values(err.data);
-    if (values.length > 0 && typeof values[0] === "string") {
-      return values[0];
-    }
-    if (err.data.message && typeof err.data.message === "string") {
-      return err.data.message;
-    }
-  }
-  if (typeof err.message === "object" && err.message !== null) {
-    const values = Object.values(err.message);
-    if (values.length > 0 && typeof values[0] === "string") {
-      return values[0];
-    }
-  }
-  return err.message || fallback;
 }
 
 // ==========================================
@@ -56,7 +54,7 @@ export async function login(email: string, password: string) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(errJson, "Sai tài khoản hoặc mật khẩu") };
+      return { success: false, error: getApiError(errJson) || "Sai tài khoản hoặc mật khẩu" };
     }
 
     const json = await res.json();
@@ -171,7 +169,7 @@ export async function registerSendOtp(fullName: string, email: string, password:
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(errJson, "Không thể gửi mã OTP") };
+      return { success: false, error: getApiError(errJson) || "Không thể gửi mã OTP" };
     }
 
     return { success: true, error: null };
@@ -192,7 +190,7 @@ export async function registerVerifyOtp(fullName: string, email: string, passwor
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(errJson, "Mã OTP không chính xác hoặc hết hạn") };
+      return { success: false, error: getApiError(errJson) || "Mã OTP không chính xác hoặc hết hạn" };
     }
 
     return { success: true, error: null };
@@ -213,7 +211,7 @@ export async function registerResendOtp(email: string) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Gửi lại OTP thất bại" };
+      return { success: false, error: getApiError(errJson) || "Gửi lại OTP thất bại" };
     }
 
     return { success: true, error: null };
@@ -238,7 +236,7 @@ export async function forgotPasswordSendOtp(email: string) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Email không tồn tại hoặc lỗi gửi OTP" };
+      return { success: false, error: getApiError(errJson) || "Email không tồn tại hoặc lỗi gửi OTP" };
     }
 
     return { success: true, error: null };
@@ -259,7 +257,7 @@ export async function forgotPasswordResendOtp(email: string) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Gửi lại OTP thất bại" };
+      return { success: false, error: getApiError(errJson) || "Gửi lại OTP thất bại" };
     }
 
     return { success: true, error: null };
@@ -281,7 +279,7 @@ export async function forgotPasswordVerifyOtp(email: string, otp: string) {
     const errJson = await res.json().catch(() => ({}));
 
     if (!res.ok) {
-      return { success: false, error: errJson?.message || "Mã OTP hợp lệ không chính xác" };
+      return { success: false, error: getApiError(errJson) || "Mã OTP hợp lệ không chính xác" };
     }
 
     // Backend thường sẽ trả về forgotPasswordToken trong object data
@@ -303,7 +301,7 @@ export async function resetPassword(forgotPasswordToken: string, password: strin
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Đặt lại mật khẩu thất bại" };
+      return { success: false, error: getApiError(errJson) || "Đặt lại mật khẩu thất bại" };
     }
 
     return { success: true, error: null };
@@ -355,7 +353,7 @@ export async function getCategories(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy danh sách danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy danh sách danh mục thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -378,7 +376,7 @@ export async function createCategory(name: string, type: string, iconFile?: File
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Tạo danh mục thất bại") };
+      return { success: false, error: getApiError(err) || "Tạo danh mục thất bại", errorData: err?.data };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -396,7 +394,7 @@ export async function getCategory(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy danh mục thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -419,7 +417,7 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Cập nhật danh mục thất bại") };
+      return { success: false, error: getApiError(err) || "Cập nhật danh mục thất bại", errorData: err?.data };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -442,7 +440,7 @@ export async function deleteCategory(id: number, mode: 'delete_all' | 'merge' = 
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa danh mục thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -463,7 +461,7 @@ export async function createBudget(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Tạo ngân sách thất bại") };
+      return { success: false, error: getApiError(err) || "Tạo ngân sách thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -482,7 +480,7 @@ export async function getBudgets(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy danh sách ngân sách thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy danh sách ngân sách thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -500,7 +498,7 @@ export async function getBudget(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy ngân sách thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy ngân sách thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -519,7 +517,7 @@ export async function updateBudget(id: number, payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Cập nhật ngân sách thất bại") };
+      return { success: false, error: getApiError(err) || "Cập nhật ngân sách thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -537,7 +535,7 @@ export async function completeBudget(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Hoàn thành ngân sách thất bại" };
+      return { success: false, error: getApiError(err) || "Hoàn thành ngân sách thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -559,7 +557,7 @@ export async function getTransactions(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy danh sách giao dịch thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy danh sách giao dịch thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -583,7 +581,7 @@ export async function createTransaction(payload: Record<string, any>, receiptFil
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Tạo giao dịch thất bại" };
+      return { success: false, error: getApiError(err) || "Tạo giao dịch thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -601,7 +599,7 @@ export async function getTransaction(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy giao dịch thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy giao dịch thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -625,7 +623,7 @@ export async function updateTransaction(id: number, payload: Record<string, any>
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật giao dịch thất bại" };
+      return { success: false, error: getApiError(err) || "Cập nhật giao dịch thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -643,7 +641,7 @@ export async function deleteTransaction(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa giao dịch thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa giao dịch thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -663,7 +661,7 @@ export async function scanInvoice(imageFile: File) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Quét hóa đơn thất bại" };
+      return { success: false, error: getApiError(err) || "Quét hóa đơn thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -685,7 +683,7 @@ export async function getStatisticsGeneral(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thống kê chung thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thống kê chung thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -704,7 +702,7 @@ export async function getStatisticsByCategory(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thống kê theo danh mục thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thống kê theo danh mục thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -723,7 +721,7 @@ export async function getStatisticsTrend(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thống kê xu hướng thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thống kê xu hướng thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -742,7 +740,7 @@ export async function getStatisticsExpenseToBalanceRatio(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy tỷ lệ chi/đối số bế dư thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy tỷ lệ chi/đối số bế dư thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -761,7 +759,7 @@ export async function getStatisticsIncomeVsExpense(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thống kê thu/chi thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thống kê thu/chi thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -782,7 +780,7 @@ export async function getNotifications() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thông báo thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thông báo thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -800,7 +798,7 @@ export async function deleteAllNotifications() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa toàn bộ thông báo thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa toàn bộ thông báo thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -817,7 +815,7 @@ export async function getNotification(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thông báo thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thông báo thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -835,7 +833,7 @@ export async function deleteNotification(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa thông báo thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa thông báo thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -853,7 +851,7 @@ export async function markNotificationRead(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Đánh dấu đã đọc thất bại" };
+      return { success: false, error: getApiError(err) || "Đánh dấu đã đọc thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -873,7 +871,7 @@ export async function checkoutPremium() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Thanh toán thất bại" };
+      return { success: false, error: getApiError(err) || "Thanh toán thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -912,7 +910,7 @@ export async function getUserProfile() {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy thông tin người dùng thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy thông tin người dùng thất bại" };
     }
     const json = await res.json();
 
@@ -950,7 +948,7 @@ export async function updateAvatar(formData: FormData) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật avatar thất bại" };
+      return { success: false, error: getApiError(err) || "Cập nhật avatar thất bại" };
     }
     const json = await res.json();
     return { success: true, data: formatUserAvatar(json.data), error: null };
@@ -969,7 +967,7 @@ export async function updateUserName(fullName: string) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Cập nhật họ tên thất bại") };
+      return { success: false, error: getApiError(err) || "Cập nhật họ tên thất bại" };
     }
     const json = await res.json();
     return { success: true, data: formatUserAvatar(json.data), error: null };
@@ -988,7 +986,7 @@ export async function updateUserStatus(status: string) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật trạng thái thất bại" };
+      return { success: false, error: getApiError(err) || "Cập nhật trạng thái thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1007,7 +1005,7 @@ export async function changePassword(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Đổi mật khẩu thất bại") };
+      return { success: false, error: getApiError(err) || "Đổi mật khẩu thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1029,7 +1027,7 @@ export async function getWallets(params = {}) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy danh sách ví thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy danh sách ví thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1048,7 +1046,7 @@ export async function createWallet(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Tạo ví thất bại") };
+      return { success: false, error: getApiError(err) || "Tạo ví thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1066,7 +1064,7 @@ export async function getWallet(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Lấy ví thất bại" };
+      return { success: false, error: getApiError(err) || "Lấy ví thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1085,7 +1083,7 @@ export async function updateWallet(id: number, payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: extractErrorMessage(err, "Cập nhật ví thất bại") };
+      return { success: false, error: getApiError(err) || "Cập nhật ví thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1103,7 +1101,7 @@ export async function deleteWallet(id: number) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa ví thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa ví thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {
@@ -1124,7 +1122,7 @@ export async function sepayWebhook(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xử lý Webhook thất bại" };
+      return { success: false, error: getApiError(err) || "Xử lý Webhook thất bại" };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1138,13 +1136,14 @@ export async function sepayWebhook(payload: Record<string, any>) {
 
 export async function deleteBudget(id: number) {
   try {
+    // Gọi API xóa ngân sách xuống Backend
     const res = await fetch(`${getDomain()}/api/v1/budgets/${id}`, {
       method: "DELETE",
       headers: { ...(await getAuthHeaders()) },
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Xóa ngân sách thất bại" };
+      return { success: false, error: getApiError(err) || "Xóa ngân sách thất bại" };
     }
     return { success: true, error: null };
   } catch (e) {

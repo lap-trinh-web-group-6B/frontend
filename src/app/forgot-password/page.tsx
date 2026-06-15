@@ -88,8 +88,7 @@ export default function ForgotPasswordPage() {
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu mới</label>
             <input
-              type="password"
-              required
+              type="password"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -99,8 +98,7 @@ export default function ForgotPasswordPage() {
           <div>
             <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Xác nhận mật khẩu</label>
             <input
-              type="password"
-              required
+              type="password"
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -137,8 +135,7 @@ export default function ForgotPasswordPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Địa chỉ Email</label>
           <input
-            type="email"
-            required
+            type="email"
             placeholder="username@gmail.com"
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={email}

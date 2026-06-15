@@ -27,7 +27,7 @@ export default function RegisterPage() {
     } else {
       setError(res.error);
     }
-    setLoading(true);
+    setLoading(false);
   };
 
   // Xác thực mã OTP để hoàn tất đăng ký tài khoản
@@ -71,8 +71,7 @@ export default function RegisterPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Họ và tên</label>
           <input
-            type="text"
-            required
+            type="text"
             placeholder="Le Ngoc Uyen"
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={fullName}
@@ -83,8 +82,7 @@ export default function RegisterPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Email</label>
           <input
-            type="email"
-            required
+            type="email"
             placeholder="example@gmail.com"
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={email}
@@ -95,8 +93,7 @@ export default function RegisterPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu</label>
           <input
-            type="password"
-            required
+            type="password"
             placeholder="Tối thiểu 6 ký tự"
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={password}
