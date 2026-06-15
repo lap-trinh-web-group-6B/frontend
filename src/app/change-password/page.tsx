@@ -26,9 +26,9 @@ export default function ChangePasswordPage() {
 
     try {
       const payload = {
-        old_password: oldPassword,
-        new_password: newPassword,
-        confirm_password: confirmPassword
+        currentPassword: oldPassword,
+        newPassword: newPassword,
+        confirmPassword: confirmPassword
       };
       const res = await changePassword(payload);
       
