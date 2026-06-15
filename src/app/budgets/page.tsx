@@ -182,8 +182,8 @@ export default function BudgetsPage() {
       amount: Number(newBudgetAmount) || 0,      // Fallback
       categoryId: newBudgetCategory ? Number(newBudgetCategory) : null, // Fallback
       amount_limit: Number(newBudgetAmount) || 0,
-      start_date: new Date(newBudgetStartDate).toISOString(),
-      end_date: new Date(newBudgetEndDate).toISOString(),
+      start_date: new Date(newBudgetStartDate + "T00:00:00").toISOString(),
+      end_date: new Date(newBudgetEndDate + "T23:59:59.999").toISOString(),
     };
     if (newBudgetCategory) {
       payload.category_id = Number(newBudgetCategory);
@@ -699,7 +699,7 @@ export default function BudgetsPage() {
                   <span className={newBudgetCategory ? "text-slate-800 font-medium" : "text-slate-400"}>
                     {newBudgetCategory 
                       ? categories.find(c => String(c.id) === String(newBudgetCategory))?.name || "Chọn danh mục"
-                      : "-- Chọn danh mục --"
+                      : "Chọn danh mục"
                     }
                   </span>
                   <svg className={`w-4 h-4 text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">

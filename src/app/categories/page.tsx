@@ -15,6 +15,7 @@ export default function CategoriesPage() {
   
   const [name, setName] = useState("");
   const [type, setType] = useState("EXPENSE"); // EXPENSE or INCOME
+  const [hasUsage, setHasUsage] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
 
   // Delete Modal State
@@ -50,6 +51,7 @@ export default function CategoriesPage() {
     setEditingId(null);
     setName("");
     setType("EXPENSE");
+    setHasUsage(false);
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -58,6 +60,8 @@ export default function CategoriesPage() {
     setEditingId(cat.id);
     setName(cat.name || "");
     setType(cat.type || "EXPENSE");
+    const usage = (cat._count?.transactions > 0) || (cat._count?.budgets > 0);
+    setHasUsage(usage);
     setModalError(null);
     setIsModalOpen(true);
   }
@@ -235,19 +239,26 @@ export default function CategoriesPage() {
                 <div className="flex p-1 bg-slate-100 rounded-xl">
                   <button
                     type="button"
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${type === 'EXPENSE' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    disabled={hasUsage}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${type === 'EXPENSE' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} ${hasUsage ? 'opacity-60 cursor-not-allowed' : ''}`}
                     onClick={() => setType('EXPENSE')}
                   >
                     Khoản chi
                   </button>
                   <button
                     type="button"
-                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${type === 'INCOME' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    disabled={hasUsage}
+                    className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors ${type === 'INCOME' ? 'bg-white text-emerald-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'} ${hasUsage ? 'opacity-60 cursor-not-allowed' : ''}`}
                     onClick={() => setType('INCOME')}
                   >
                     Khoản thu
                   </button>
                 </div>
+                {hasUsage && (
+                  <p className="text-[11px] text-amber-600 mt-2 font-medium flex items-center gap-1">
+                    <span>⚠️</span> Không thể đổi loại thu/chi khi danh mục đã có giao dịch hoặc ngân sách.
+                  </p>
+                )}
               </div>
 
               <div className="pt-4 flex gap-3">
@@ -348,7 +359,7 @@ export default function CategoriesPage() {
                     value={targetCategoryId || ""}
                     onChange={(e) => setTargetCategoryId(Number(e.target.value))}
                   >
-                    <option value="">-- Chọn danh mục --</option>
+                    <option value="">Chọn danh mục</option>
                     {categories
                       .filter(c => c.id !== deletingCategory.id && c.type === deletingCategory.type)
                       .map(c => (
