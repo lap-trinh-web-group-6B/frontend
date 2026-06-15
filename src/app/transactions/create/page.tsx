@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { 
-  createTransaction, 
+import {
+  createTransaction,
   getWallets,
   getCategories,
   scanInvoice,
@@ -25,7 +25,7 @@ export default function CreateTransactionPage() {
   const [type, setType] = useState("EXPENSE"); // Only for UI filtering
   const [walletId, setWalletId] = useState<number | "">("");
   const [categoryId, setCategoryId] = useState<number | "">("");
-  
+
   // Lists
   const [wallets, setWallets] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
@@ -54,7 +54,7 @@ export default function CreateTransactionPage() {
       if (res.success) {
         setProfile(res.data);
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   async function fetchData() {
@@ -80,7 +80,7 @@ export default function CreateTransactionPage() {
       setError("Vui lòng điền đủ thông tin ví, danh mục và số tiền");
       return;
     }
-    
+
     setSaving(true);
     setError(null);
     try {
@@ -91,7 +91,7 @@ export default function CreateTransactionPage() {
         wallet_id: Number(walletId), // mapped to DB column
         category_id: Number(categoryId) // mapped to DB column
       };
-      
+
       const res = await createTransaction(payload);
       if (res.success) {
         window.dispatchEvent(new Event('notifications_updated'));
@@ -112,7 +112,7 @@ export default function CreateTransactionPage() {
 
     setScanning(true);
     setError(null);
-    
+
     try {
       const res = await scanInvoice(file);
       if (res.success && res.data) {
@@ -121,7 +121,7 @@ export default function CreateTransactionPage() {
           try {
             const d = new Date(res.data.date);
             if (!isNaN(d.getTime())) setDate(d.toISOString().slice(0, 16));
-          } catch(e) {}
+          } catch (e) { }
         }
         if (res.data.note) setNote(res.data.note);
       } else {
@@ -139,7 +139,7 @@ export default function CreateTransactionPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <button 
+        <button
           onClick={() => router.push("/transactions")}
           className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
         >
@@ -293,14 +293,14 @@ export default function CreateTransactionPage() {
               <h3 className="text-lg font-extrabold flex items-center gap-2">
                 Nâng cấp Premium
               </h3>
-              <button 
+              <button
                 onClick={() => setIsPromoOpen(false)}
                 className="text-white/80 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
               </button>
             </div>
-            
+
             <div className="p-6 space-y-6">
               <div className="text-slate-600 text-sm leading-relaxed text-center font-medium">
                 Tính năng tự động nhận diện quét ảnh hóa đơn bằng AI chỉ khả dụng đối với tài khoản PREMIUM. Hãy nâng cấp ngay để trải nghiệm sự tiện lợi này cùng nhiều tính năng vượt trội khác!
