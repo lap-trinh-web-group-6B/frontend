@@ -108,6 +108,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
       
       const res = await updateTransaction(transactionId, payload);
       if (res.success) {
+        window.dispatchEvent(new Event('notifications_updated'));
         router.push("/transactions");
       } else {
         setError(res.error || "Không thể cập nhật giao dịch");
