@@ -15,6 +15,32 @@ function formatUserAvatar(user: any) {
   return user;
 }
 
+function extractErrorMessage(err: any, fallback: string): string {
+  if (!err) return fallback;
+  if (err.message && err.message !== "Lỗi" && err.message !== "error" && typeof err.message === "string") {
+    return err.message;
+  }
+  if (typeof err.data === "string" && err.data) {
+    return err.data;
+  }
+  if (err.data && typeof err.data === "object") {
+    const values = Object.values(err.data);
+    if (values.length > 0 && typeof values[0] === "string") {
+      return values[0];
+    }
+    if (err.data.message && typeof err.data.message === "string") {
+      return err.data.message;
+    }
+  }
+  if (typeof err.message === "object" && err.message !== null) {
+    const values = Object.values(err.message);
+    if (values.length > 0 && typeof values[0] === "string") {
+      return values[0];
+    }
+  }
+  return err.message || fallback;
+}
+
 // ==========================================
 // 1. ĐĂNG NHẬP & ĐĂNG XUẤT (AUTHENTICATION)
 // ==========================================
@@ -30,7 +56,7 @@ export async function login(email: string, password: string) {
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Sai tài khoản hoặc mật khẩu" };
+      return { success: false, error: extractErrorMessage(errJson, "Sai tài khoản hoặc mật khẩu") };
     }
 
     const json = await res.json();
@@ -145,7 +171,7 @@ export async function registerSendOtp(fullName: string, email: string, password:
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Không thể gửi mã OTP" };
+      return { success: false, error: extractErrorMessage(errJson, "Không thể gửi mã OTP") };
     }
 
     return { success: true, error: null };
@@ -166,7 +192,7 @@ export async function registerVerifyOtp(fullName: string, email: string, passwor
 
     if (!res.ok) {
       const errJson = await res.json().catch(() => ({}));
-      return { success: false, error: errJson?.message || "Mã OTP không chính xác hoặc hết hạn" };
+      return { success: false, error: extractErrorMessage(errJson, "Mã OTP không chính xác hoặc hết hạn") };
     }
 
     return { success: true, error: null };
@@ -352,7 +378,7 @@ export async function createCategory(name: string, type: string, iconFile?: File
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Tạo danh mục thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Tạo danh mục thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -393,7 +419,7 @@ export async function updateCategory(id: number, fields: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật danh mục thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Cập nhật danh mục thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -437,7 +463,7 @@ export async function createBudget(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Tạo ngân sách thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Tạo ngân sách thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -493,7 +519,7 @@ export async function updateBudget(id: number, payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật ngân sách thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Cập nhật ngân sách thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -943,7 +969,7 @@ export async function updateUserName(fullName: string) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật họ tên thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Cập nhật họ tên thất bại") };
     }
     const json = await res.json();
     return { success: true, data: formatUserAvatar(json.data), error: null };
@@ -981,7 +1007,7 @@ export async function changePassword(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Đổi mật khẩu thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Đổi mật khẩu thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1022,7 +1048,7 @@ export async function createWallet(payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Tạo ví thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Tạo ví thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
@@ -1059,7 +1085,7 @@ export async function updateWallet(id: number, payload: Record<string, any>) {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      return { success: false, error: err.message || "Cập nhật ví thất bại" };
+      return { success: false, error: extractErrorMessage(err, "Cập nhật ví thất bại") };
     }
     const json = await res.json();
     return { success: true, data: json.data, error: null };
