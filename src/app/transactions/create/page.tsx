@@ -94,6 +94,7 @@ export default function CreateTransactionPage() {
       
       const res = await createTransaction(payload);
       if (res.success) {
+        window.dispatchEvent(new Event('notifications_updated'));
         router.push("/transactions");
       } else {
         setError(res.error || "Không thể tạo giao dịch");
