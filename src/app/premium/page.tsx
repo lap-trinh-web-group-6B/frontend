@@ -15,7 +15,6 @@ export default function PremiumPage() {
   const [checkoutData, setCheckoutData] = useState<any>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const [isLocalDev, setIsLocalDev] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [simMessage, setSimMessage] = useState<string | null>(null);
 
@@ -34,13 +33,6 @@ export default function PremiumPage() {
   useEffect(() => {
     fetchProfile();
     fetchConfig();
-    // Check if running on localhost for simulator button
-    if (typeof window !== "undefined") {
-      setIsLocalDev(
-        window.location.hostname === "localhost" || 
-        window.location.hostname === "127.0.0.1"
-      );
-    }
   }, []);
 
   async function fetchConfig() {
@@ -439,15 +431,15 @@ export default function PremiumPage() {
             </div>
           )}
 
-          {/* LOCAL DEV SIMULATOR BUTTON (ONLY RENDER ON LOCALHOST) */}
-          {isLocalDev && checkoutData && (
+          {/* WEBHOOK SIMULATOR BUTTON (RENDER ON LOCAL AND PRODUCTION) */}
+          {checkoutData && (
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-3xl p-6 shadow-sm space-y-4">
               <div className="flex items-center gap-2 text-purple-800">
                 <span className="text-xl">🛠️</span>
-                <span className="font-bold text-sm uppercase tracking-wider">Môi trường phát triển - Lập trình viên</span>
+                <span className="font-bold text-sm uppercase tracking-wider">Giả lập thanh toán Webhook</span>
               </div>
               <p className="text-xs text-slate-600">
-                Khi chạy thử ở localhost, webhook từ cổng thanh toán thực tế không thể gọi về máy tính của bạn. Bạn có thể nhấn nút dưới đây để giả lập sự kiện thanh toán thành công chuyển từ ngân hàng về Sepay.
+                Bạn có thể nhấn nút dưới đây để giả lập sự kiện thanh toán thành công từ ngân hàng gửi về hệ thống (áp dụng cho cả môi trường phát triển local và production).
               </p>
 
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 pt-1">

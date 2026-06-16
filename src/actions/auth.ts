@@ -1166,7 +1166,8 @@ export async function simulatePayment(orderCode: string) {
       console.warn("Failed to fetch dynamic payment config for simulation, using fallback 2000:", err);
     }
 
-    const res = await fetch(`${getDomain()}/api/webhook/sepay?apikey=sepay_webhook_secure_key_2026`, {
+    const webhookKey = process.env.SEPAY_WEBHOOK_KEY || "sepay_webhook_secure_key_2026";
+    const res = await fetch(`${getDomain()}/api/webhook/sepay?apikey=${webhookKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
