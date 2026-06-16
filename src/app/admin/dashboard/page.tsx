@@ -74,6 +74,23 @@ export default function AdminDashboardPage() {
              </div>
           </div>
         </div>
+        <div className="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm md:col-span-2">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="font-semibold text-slate-800">Cấu hình Hệ thống</h3>
+          </div>
+          <div className="p-4 bg-purple-50 border border-purple-100 rounded-xl flex items-center justify-between">
+            <div>
+              <h4 className="font-semibold text-purple-800">Cấu hình Webhook & Thanh toán</h4>
+              <p className="text-xs text-purple-600 mt-1">Quản lý giá gói Premium, thông tin ngân hàng và cấu hình Sepay VietQR.</p>
+            </div>
+            <Link 
+              href="/admin/premium" 
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors"
+            >
+              Cài đặt
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl flex gap-3 text-sm text-amber-800">
