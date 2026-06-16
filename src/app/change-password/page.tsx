@@ -82,7 +82,8 @@ export default function ChangePasswordPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu hiện tại</label>
           <input
-            type="password"
+            type="password"
+
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={oldPassword}
             onChange={(e) => setOldPassword(e.target.value)}
@@ -92,7 +93,8 @@ export default function ChangePasswordPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Mật khẩu mới</label>
           <input
-            type="password"
+            type="password"
+
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -102,7 +104,8 @@ export default function ChangePasswordPage() {
         <div>
           <label className="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-2">Xác nhận mật khẩu mới</label>
           <input
-            type="password"
+            type="password"
+
             className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-emerald-500 focus:bg-white focus:ring-2 focus:ring-emerald-100 outline-none transition-all text-sm"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
