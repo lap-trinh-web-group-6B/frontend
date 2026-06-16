@@ -117,14 +117,13 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
           {menuItems.map((item) => {
             const isActive = pathname === item.path || (item.path !== "/" && pathname.startsWith(item.path));
             return (
-              <Link 
-                key={item.path} 
+              <Link
+                key={item.path}
                 href={item.path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium ${
-                  isActive 
-                    ? "bg-emerald-50 text-emerald-700" 
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-medium ${isActive
+                    ? "bg-emerald-50 text-emerald-700"
                     : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-                }`}
+                  }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={isActive ? 2.5 : 2} d={item.icon} />
@@ -198,8 +197,8 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
               </div>
               <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
                 {menuItems.map((item) => (
-                  <Link 
-                    key={item.path} 
+                  <Link
+                    key={item.path}
                     href={item.path}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-600 hover:bg-slate-50 font-medium"
@@ -212,8 +211,8 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
                 ))}
               </nav>
               <div className="p-4 border-t border-slate-100">
-                <Link 
-                  href="/profile" 
+                <Link
+                  href="/profile"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:bg-slate-50 hover:text-slate-800 transition-colors"
                 >
@@ -246,7 +245,7 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 // --- MAIN WRAPPER ---
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  
+
   const authPaths = ["/login", "/register", "/forgot-password"];
   const isAuth = authPaths.includes(pathname);
 

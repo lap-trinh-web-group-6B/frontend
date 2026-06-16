@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MONETY - FRONTEND NEXT.JS APPLICATION
 
-## Getting Started
+Đây là mã nguồn **Frontend** của dự án Monety, được xây dựng bằng **Next.js 16 (App Router)** và **Tailwind CSS**.
 
-First, run the development server:
+---
 
+## Live Demo & Production
+
+- **Ứng dụng Monety (Frontend)**: [https://monety-frontend.onrender.com](https://monety-frontend.onrender.com)
+
+> [!NOTE]
+> **Lưu ý**: Vì frontend được triển khai trên **Render bản miễn phí**, trang web sẽ tự động đi vào trạng thái ngủ khi không có hoạt động. Lần truy cập đầu tiên có thể mất **50 giây đến 2 phút** để trang tải đầy đủ.
+
+---
+
+## Hướng dẫn cài đặt và chạy local
+
+### 1. Cài đặt các gói thư viện
+Đảm bảo bạn đang ở thư mục `app-manager-spending/`:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cd app-manager-spending
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Cấu hình biến môi trường (`.env`)
+Tạo file `.env` ở thư mục gốc của frontend với nội dung sau:
+```env
+# URL trỏ tới máy chủ Backend API chạy cục bộ (mặc định là cổng 3001)
+API_URL="http://localhost:3001/api"
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Khóa bảo mật Webhook của Sepay (cần trùng khớp với Backend)
+# SEPAY_WEBHOOK_KEY="sepay_webhook_secure_key_2026"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 3. Khởi chạy dự án ở môi trường phát triển
+```bash
+npm run dev
+```
+*Mở trình duyệt truy cập địa chỉ: `http://localhost:3000`*
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 4. Build sản phẩm hoàn chỉnh (Production)
+```bash
+npm run build
+npm run start
+```

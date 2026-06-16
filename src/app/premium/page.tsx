@@ -169,7 +169,7 @@ export default function PremiumPage() {
     setSimulating(true);
     setSimMessage(null);
     try {
-      const res = await simulatePayment(checkoutData.order.orderCode);
+      const res = await simulatePayment(checkoutData.order.orderCode, checkoutData.order.amount);
       if (res.success) {
         setSimMessage("⚡ Đã gửi webhook giả lập thành công! Đang đợi hệ thống kích hoạt...");
       } else {
@@ -389,10 +389,10 @@ export default function PremiumPage() {
                       <span className="text-slate-500 text-xs font-semibold uppercase">Số tiền</span>
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-amber-600">
-                          {Number(paymentConfig.premiumPrice).toLocaleString("vi-VN")} VNĐ
+                          {Number(checkoutData?.order?.amount || paymentConfig.premiumPrice).toLocaleString("vi-VN")} VNĐ
                         </span>
                         <button
-                          onClick={() => handleCopy(String(paymentConfig.premiumPrice), "amount")}
+                          onClick={() => handleCopy(String(checkoutData?.order?.amount || paymentConfig.premiumPrice), "amount")}
                           className="p-1 hover:bg-slate-200 rounded text-slate-400 hover:text-slate-600 transition-colors"
                           title="Sao chép số tiền"
                         >
